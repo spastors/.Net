@@ -1,7 +1,7 @@
 # 📘 Guía de Iniciación a .NET (Backend)
 
 > **Resumen:** Notas técnicas sobre el ecosistema .NET, sintaxis moderna de C\# y patrones para desarrollo backend.
-> **Versión:** Enfocado en .NET 8 LTS / 9 STS y C\# 13.
+> **Versión:** Enfocado en .NET 8 LTS y C\# 12.
 
 ## 1\. 🛠️ Configuración y Entorno
 
