@@ -8,27 +8,45 @@
 Para empezar a trabajar con el ecosistema moderno de Microsoft.
 
   * **SDK:** Descargar la versión LTS (Long Term Support) recomendada: [.NET Download](https://dotnet.microsoft.com/es-es/download/dotnet).
-  * **IDE Recomendado:** Visual Studio 2026 (Community) o VS Code con la extensión **C\# Dev Kit**. [Descargar aqui](https://visualstudio.microsoft.com/es/downloads/))
+  * **IDE Recomendado:** Visual Studio 2026 (Community) o VS Code con la extensión **C\# Dev Kit**. [Visual Studio Download](https://visualstudio.microsoft.com/es/downloads/)
 
 ### Comandos Esenciales (CLI)
 
 La terminal es tu amiga en .NET Core/.NET 5+.
 
 ```bash
-dotnet --version          # Verificar instalación
-dotnet new list           # Ver plantillas disponibles
-dotnet new webapi -n MiApi # Crear una API Web
-dotnet new console -n App # Crear aplicación de consola
-dotnet run                # Ejecutar proyecto
-dotnet build              # Compilar proyecto
+dotnet --version            # Verificar instalación
+dotnet new list             # Ver plantillas disponibles
+dotnet new webapi -n MyApi  # Crear una API Web
+dotnet new console -n App   # Crear aplicación de consola
+dotnet run                  # Ejecutar proyecto
+dotnet build                # Compilar proyecto
 ```
-
------
 
 ## 2\. ⌨️ Sintaxis y Sistema de Tipos
 
 C\# es un lenguaje **fuertemente tipado** (aunque tiene inferencia de tipos) y **compilado**.
 
+```markdown
+### 🧬 C# 13 Cheat Sheet: Tipos de Datos Básicos
+
+| Categoría | Alias C# | Tipo .NET | Sufijo | Ejemplo de Uso | Notas |
+| :--- | :--- | :--- | :---: | :--- | :--- |
+| **Enteros** | `int` | `Int32` | - | `var n = 42;` | El estándar por defecto. |
+| | `long` | `Int64` | `L` | `var n = 900000L;` | Números muy grandes. |
+| **Flotantes** | `double` | `Double` | `d` | `var n = 3.14;` | Por defecto para decimales. Rápido, menos preciso. |
+| | `float` | `Single` | `f` | `var n = 3.14f;` | Menor precisión, usado en gráficos/Unity. |
+| | `decimal` | `Decimal` | `m` | `var n = 19.99m;` | **Obligatorio para dinero/finanzas**. Alta precisión. |
+| **Texto** | `string` | `String` | - | `"Hola"` | Cadena de caracteres inmutable. |
+| | `char` | `Char` | - | `'A'` | Un solo carácter (comillas simples). |
+| **Lógica** | `bool` | `Boolean` | - | `true` / `false` | Solo dos valores posibles. |
+| **Fechas** | `DateTime` | `DateTime` | - | `DateTime.Now` | Fecha + Hora. |
+| *(Moderno)* | `DateOnly` | `DateOnly` | - | `new DateOnly(2025,1,1)` | Solo fecha (sin hora). Más eficiente. |
+| **Otros** | `object` | `Object` | - | - | La clase base de **todo** en .NET. |
+| | `Guid` | `Guid` | - | `Guid.NewGuid()` | Identificador único global. |
+```
+
+```csharp
 /* ┌─────────────────────────────────────────────────────────────┐
    │               C# TYPE SYSTEM CHEATSHEET 🧪                  │
    └─────────────────────────────────────────────────────────────┘
@@ -61,6 +79,7 @@ TimeOnly soloHora   = new TimeOnly(14,30);      // 14:30 (Ligero)
 // 5. IDENTIFICADORES & BYTES
 Guid    idUnico     = Guid.NewGuid(); // a1b2c3d4-e5f6... (Ideal para Primary Keys)
 byte    unByte      = 255;            // De 0 a 255 (Para manipulación de archivos/imágenes)
+```
 
 ### Declaración de Variables: `var` vs `dynamic` vs `const`
 
@@ -99,7 +118,7 @@ string ruta = $@"C:\Usuarios\{nombre}\Documentos";
 
 ### 💾 Tipos de Referencia vs. Tipos de Valor (`struct`)
 
-Este es un concepto **fundamental** en C\# que afecta directamente cómo el programa gestiona la memoria y cómo se comportan tus datos al ser pasados entre métodos. Es un punto clave en las entrevistas.
+Este es un concepto **fundamental** en C\# que afecta directamente cómo el programa gestiona la memoria y cómo se comportan tus datos al ser pasados entre métodos. 
 
 #### 1\. Tipos de Valor (Value Types: `struct`, `int`, `bool`, `enum`)
 
@@ -132,8 +151,6 @@ Console.WriteLine($"A: {puntoA.X}"); // Output: A: 10 (El original no cambia)
 Console.WriteLine($"B: {puntoB.X}"); // Output: B: 50
 ```
 
------
-
 #### 2\. Tipos de Referencia (Reference Types: `class`, `string`, `array`)
 
 Los Tipos de Referencia no contienen los datos directamente; contienen una **referencia** (una dirección de memoria) que apunta a dónde están los datos reales.
@@ -164,8 +181,6 @@ puntoB.X = 50;       // Cambiamos el objeto compartido
 Console.WriteLine($"A: {puntoA.X}"); // Output: A: 50 (El original SÍ cambia)
 Console.WriteLine($"B: {puntoB.X}"); // Output: B: 50
 ```
-
------
 
 ## 3\. 🧬 Programación Orientada a Objetos (POO)
 
@@ -210,20 +225,18 @@ var lapiz = new Producto("Lápiz HB");
 lapiz.AñadirStock(10);
 ```
 
------
-
 ### Clases y Herencia: `virtual` vs `override`
 
 La **Herencia** permite que una clase hija adquiera las propiedades y métodos de una clase padre. Los conceptos `virtual` y `override` son la base del **Polimorfismo** y son preguntas garantizadas en cualquier entrevista.
 
 Para permitir que un método sea modificado por una clase hija, usamos `virtual` y `override`.
 
-```
-
+```markdown
 | Palabra Clave | Uso | Propósito |
 | :--- | :--- | :--- |
 | **`virtual`** | Se define en el **método de la clase padre**. | Permite que este comportamiento **pueda ser modificado** (sobrescrito) por las clases que hereden de ella. |
 | **`override`** | Se define en el **método de la clase hija**. | **Reemplaza** el comportamiento definido en la clase padre. |
+```
 
 #### Ejemplo de Código:
 
@@ -255,8 +268,6 @@ Console.WriteLine(e.CalcularSalario()); // Salario base según contrato.
 Console.WriteLine(m.CalcularSalario()); // Salario base según contrato. Más bonificación...
 ```
 
------
-
 ### Interfaces
 
 Definen un **contrato**. Una interfaz solo contiene las firmas de los métodos, propiedades, o eventos, pero **no su implementación**. La clase que implementa la interfaz *debe* proporcionar el código para esos miembros.
@@ -279,8 +290,6 @@ public class RepositorioSql : IGuardable
     }
 }
 ```
-
------
 
 ## 4\. 🚀 Funciones de Primera Clase y Delegados (Callbacks)
 
@@ -330,8 +339,6 @@ var aMayusculas = (string s) => s.ToUpper();
 Transformar(aMayusculas, "hola mundo"); // Imprime: HOLA MUNDO
 ```
 
------
-
 ## 5\. 🔍 Generics y Colecciones
 
 Los **Genéricos (`<T>`)** nos permiten escribir código reutilizable y seguro sin especificar el tipo de dato exacto hasta el momento de usarlo.
@@ -348,8 +355,6 @@ public T DevolverElemento<T>(T elemento)
     return elemento;
 }
 ```
-
------
 
 ## 6\. 📊 LINQ (Language Integrated Query)
 
@@ -373,34 +378,3 @@ var query = from n in numeros
             where n > 5
             select n;
 ```
-
------
-
-## 7\. 🌐 Ecosistema Web (Conceptos Backend)
-
-Breve introducción a cómo se estructuran estos conceptos en una API moderna (.NET 9).
-
-### Estructura Básica (Program.cs)
-
-En las versiones modernas, el `Main`, `Startup` y `using` se simplifican (Top-Level Statements).
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-
-// 1. Inyección de Dependencias (Contenedor)
-builder.Services.AddControllers();
-
-var app = builder.Build();
-
-// 2. Middleware (Pipeline de la petición)
-app.UseHttpsRedirection();
-app.MapControllers();
-
-app.Run(); // Arranca la app
-```
-
-### Conceptos Clave para Entrevista
-
-  * **Inyección de Dependencias (DI):** No creamos objetos con `new` dentro de las clases. Los pedimos en el constructor.
-  * **Middleware:** Software que se ejecuta en medio de una petición (ej: Autenticación, Logging de errores).
-  * **Async/Await:** Programación concurrente. En Web es obligatorio usar `await` en llamadas a Base de Datos para no bloquear el hilo del servidor.
