@@ -1,4 +1,4 @@
-# 📘 Guía de Iniciación a .NET
+# 📘 Guía de Iniciación a .NET (Backend)
 
 > **Resumen:** Notas técnicas sobre el ecosistema .NET, sintaxis moderna de C\# y patrones para desarrollo backend.
 > **Versión:** Enfocado en .NET 9 (LTS) y C\# 13.
@@ -15,73 +15,65 @@ Para empezar a trabajar con el ecosistema moderno de Microsoft.
 La terminal es tu amiga en .NET Core/.NET 5+.
 
 ```bash
-dotnet --version            # Verificar instalación
-dotnet new list             # Ver plantillas disponibles
-dotnet new webapi -n MyApi  # Crear una API Web
-dotnet new console -n App   # Crear aplicación de consola
-dotnet run                  # Ejecutar proyecto
-dotnet build                # Compilar proyecto
+dotnet --version            # Verificar instalación
+dotnet new list             # Ver plantillas disponibles
+dotnet new webapi -n MyApi  # Crear una API Web
+dotnet new console -n App   # Crear aplicación de consola
+dotnet run                  # Ejecutar proyecto
+dotnet build                # Compilar proyecto
 ```
 
 ## 2\. ⌨️ Sintaxis y Sistema de Tipos
 
 C\# es un lenguaje **fuertemente tipado** (aunque tiene inferencia de tipos) y **compilado**.
 
-```markdown
-### 🧬 C# 13 Cheat Sheet: Tipos de Datos Básicos
+### Fundamentos de Sintaxis y Control
 
-| Categoría | Alias C# | Tipo .NET | Sufijo | Ejemplo de Uso | Notas |
-| :--- | :--- | :--- | :---: | :--- | :--- |
-| **Enteros** | `int` | `Int32` | - | `var n = 42;` | El estándar por defecto. |
-| | `long` | `Int64` | `L` | `var n = 900000L;` | Números muy grandes. |
-| **Flotantes** | `double` | `Double` | `d` | `var n = 3.14;` | Por defecto para decimales. Rápido, menos preciso. |
-| | `float` | `Single` | `f` | `var n = 3.14f;` | Menor precisión, usado en gráficos/Unity. |
-| | `decimal` | `Decimal` | `m` | `var n = 19.99m;` | **Obligatorio para dinero/finanzas**. Alta precisión. |
-| **Texto** | `string` | `String` | - | `"Hola"` | Cadena de caracteres inmutable. |
-| | `char` | `Char` | - | `'A'` | Un solo carácter (comillas simples). |
-| **Lógica** | `bool` | `Boolean` | - | `true` / `false` | Solo dos valores posibles. |
-| **Fechas** | `DateTime` | `DateTime` | - | `DateTime.Now` | Fecha + Hora. |
-| *(Moderno)* | `DateOnly` | `DateOnly` | - | `new DateOnly(2025,1,1)` | Solo fecha (sin hora). Más eficiente. |
-| **Otros** | `object` | `Object` | - | - | La clase base de **todo** en .NET. |
-| | `Guid` | `Guid` | - | `Guid.NewGuid()` | Identificador único global. |
-```
+La estructura básica de un programa es: `using` (importar bibliotecas), `namespace` (agrupador lógico), `class` (plantilla de objeto) y el punto de entrada, que en las aplicaciones modernas de Consola o Web API es implícito (**Top-Level Statements**).
+
+  * **Datos Primitivos:** Cubiertos en el *Cheatsheet* (ej: `int`, `bool`, `char`).
+  * **Funciones/Métodos:** Bloques de código reutilizables.
+  * **Estructuras de Control:** `if/else`, `switch`, y bucles (`for`, `foreach`, `while`).
+
+#### Cheatsheet de Tipos Básicos
 
 ```csharp
-/* ┌─────────────────────────────────────────────────────────────┐
-   │               C# TYPE SYSTEM CHEATSHEET 🧪                  │
-   └─────────────────────────────────────────────────────────────┘
+/*
+   ┌─────────────────────────────────────────────────────────────┐
+   │               C# TYPE SYSTEM CHEATSHEET 🧪                  │
+   └─────────────────────────────────────────────────────────────┘
 */
 
 // 1. NÚMEROS (NUMBERS)
-int     entero      = 42;             // Estándar para contar (-2B a +2B)
-long    gigante     = 9_000_000L;     // Entero de 64-bits (Nota el guion bajo y 'L')
-double  cientifico  = 3.14159;        // Punto flotante estándar (Impreciso para $)
-float   graficos    = 3.14f;          // Menor peso, usado en Unity/Juegos ('f')
-decimal dinero      = 100.50m;        // ¡CRÍTICO! Alta precisión para finanzas ('m')
+int     entero      = 42;             // Estándar para contar (-2B a +2B)
+long    gigante     = 9_000_000L;     // Entero de 64-bits (Nota el guion bajo y 'L')
+double  cientifico  = 3.14159;        // Punto flotante estándar (Impreciso para $)
+float   graficos    = 3.14f;          // Menor peso, usado en Unity/Juegos ('f')
+decimal dinero      = 100.50m;        // ¡CRÍTICO! Alta precisión para finanzas ('m')
 
 // 2. TEXTO (STRINGS)
-char    letra       = 'A';            // Comillas simples, solo 1 carácter
-string  texto       = "Hola Mundo";   // Comillas dobles estándar
-string  json        = """             
-                      {
-                        "prop": "val" 
-                      }
-                      """;            // Raw String Literal (C# 11+): Ideal para JSON/XML multilínea
+char    letra       = 'A';            // Comillas simples, solo 1 carácter
+string  texto       = "Hola Mundo";   // Comillas dobles estándar
+string  json        = """             
+                      {
+                        "prop": "val" 
+                      }
+                      """;            // Raw String Literal (C# 11+): Ideal para JSON/XML multilínea
 
 // 3. LÓGICA (BOOLEAN)
-bool    esValido    = true;           // Ocupa 1 byte (teóricamente 1 bit)
+bool    esValido    = true;           // Ocupa 1 byte (teóricamente 1 bit)
 
 // 4. FECHAS (DATES - MODERN .NET)
-DateTime fechaHora  = DateTime.Now;             // 2025-10-05 14:30:00 (Pesado)
-DateOnly soloFecha  = new DateOnly(2025,10,5);  // 2025-10-05 (Ligero - Recomendado si no usas hora)
-TimeOnly soloHora   = new TimeOnly(14,30);      // 14:30 (Ligero)
+DateTime fechaHora  = DateTime.Now;             // 2025-10-05 14:30:00 (Pesado)
+DateOnly soloFecha  = new DateOnly(2025,10,5);  // 2025-10-05 (Ligero - Recomendado si no usas hora)
+TimeOnly soloHora   = new TimeOnly(14,30);      // 14:30 (Ligero)
 
 // 5. IDENTIFICADORES & BYTES
-Guid    idUnico     = Guid.NewGuid(); // a1b2c3d4-e5f6... (Ideal para Primary Keys)
-byte    unByte      = 255;            // De 0 a 255 (Para manipulación de archivos/imágenes)
+Guid    idUnico     = Guid.NewGuid(); // a1b2c3d4-e5f6... (Ideal para Primary Keys)
+byte    unByte      = 255;            // De 0 a 255 (Para manipulación de archivos/imágenes)
 ```
 
-### Declaración de Variables: `var` vs `dynamic` vs `const`
+#### Declaración de Variables: `var` vs `dynamic` vs `const`
 
 Esta es una pregunta clásica de entrevista.
 
@@ -93,17 +85,17 @@ Esta es una pregunta clásica de entrevista.
 
 ```csharp
 // ✅ Recomendado: El compilador sabe que es int
-var edad = 25; 
+var edad = 25; 
 
 // 🔒 Constante: Nunca cambiará
-const double PI = 3.1416; 
+const double PI = 3.1416; 
 
 // ⚠️ Peligroso: Si te equivocas, falla cuando el programa corre, no al compilar
-dynamic datos = "Hola"; 
+dynamic datos = "Hola"; 
 datos = 10; // Esto es válido en dynamic, pero daría error en var
 ```
 
-### Strings: Interpolación y Verbatim
+#### Strings: Interpolación y Verbatim
 
   * **Interpolación (`$`)**: Insertar variables directamente.
   * **Verbatim (`@`)**: Ignora caracteres de escape (útil para rutas de archivos).
@@ -113,104 +105,110 @@ datos = 10; // Esto es válido en dynamic, pero daría error en var
 ```csharp
 string nombre = "Ana";
 // Combinando ambos (muy útil en rutas o JSON a mano)
-string ruta = $@"C:\Usuarios\{nombre}\Documentos"; 
+string ruta = $@"C:\Usuarios\{nombre}\Documentos"; 
 ```
 
-### 💾 Tipos de Referencia vs. Tipos de Valor (`struct`)
+## 💾 Tipos de Referencia vs. Tipos de Valor
 
-Este es un concepto **fundamental** en C\# que afecta directamente cómo el programa gestiona la memoria y cómo se comportan tus datos al ser pasados entre métodos. 
+Esta es la diferencia más importante de C\#: cómo se guardan los datos en la memoria y qué sucede cuando se copian.
 
-#### 1\. Tipos de Valor (Value Types: `struct`, `int`, `bool`, `enum`)
+### 1\. Tipos de Valor (Value Types: `int`, `bool`, `struct`) 🎁
 
-Los Tipos de Valor contienen directamente su información. Cuando los pasas o los copias, copias el **valor** real.
+Los Tipos de Valor son como una **caja que contiene su propio contenido**.
 
-##### Características:
+| Concepto | Explicación Simple | Analogía |
+| :--- | :--- | :--- |
+| **¿Qué guardan?** | El **dato** real. (Ej: el número 10, o el valor `true`). | Una **fotografía física**. |
+| **¿Dónde viven?** | En el **Stack** (Pila). Piensa en esto como una estantería pequeña y súper rápida. | |
+| **Al copiar...** | Se hace una **copia idéntica e independiente** del contenido. | Si copias la fotografía, tienes **dos fotos separadas**. Si dibujas en la copia, la original no se altera. |
+| **Ejemplos** | Tipos primitivos (`int`, `decimal`, `bool`) y estructuras que defines con `struct`. | |
 
-  * **Ubicación en Memoria:** Se almacenan en el **Stack** (Pila). El Stack es una región de memoria rápida y bien organizada.
-  * **Comportamiento al Copiar:** Al copiar una variable de valor, creas una **copia totalmente independiente** de los datos. Cambiar la copia no afecta al original.
-  * **Ejemplos Comunes:** Los tipos primitivos (`int`, `bool`, `char`, `float`, `decimal`) son estructuras (structs) en C\# y se comportan como tipos de valor. La estructura `struct` te permite crear tus propios tipos de valor.
-
-##### 📝 Analogía de la Copia:
-
-Imagina que copias un **billete de $10**. Tienes dos billetes de $10. Si quemas tu copia (la modificas), el billete original sigue intacto.
-
-##### Ejemplo de Código (`struct`):
+#### Ejemplo de Código (`struct`):
 
 ```csharp
-public struct Coordenada
-{
-    public int X;
-    public int Y;
-}
+public struct Coordenada { public int X; }
 
-var puntoA = new Coordenada { X = 10, Y = 20 };
-var puntoB = puntoA; // Se copia el VALOR (10, 20)
-puntoB.X = 50;       // Solo cambiamos la copia (puntoB)
+var original = new Coordenada { X = 10 };
+var copia = original; // 🎁 Se copia el valor 10.
+copia.X = 50;         // Modificamos SÓLO la copia.
 
-Console.WriteLine($"A: {puntoA.X}"); // Output: A: 10 (El original no cambia)
-Console.WriteLine($"B: {puntoB.X}"); // Output: B: 50
+Console.WriteLine($"Original: {original.X}"); // Output: 10 (No cambia)
+Console.WriteLine($"Copia:    {copia.X}");    // Output: 50
 ```
 
-#### 2\. Tipos de Referencia (Reference Types: `class`, `string`, `array`)
+### 2\. Tipos de Referencia (Reference Types: `class`, `array`) 🔑
 
-Los Tipos de Referencia no contienen los datos directamente; contienen una **referencia** (una dirección de memoria) que apunta a dónde están los datos reales.
+Los Tipos de Referencia son como una **etiqueta que apunta a un objeto más grande**.
 
-##### Características:
-
-  * **Ubicación en Memoria:** Se almacenan en el **Heap** (Montón). El Heap es una región de memoria dinámica, más lenta de gestionar que el Stack, y es gestionada por el **Garbage Collector (GC)**.
-  * **Comportamiento al Copiar:** Al copiar una variable de referencia, copias la **dirección** (la referencia), no los datos. Ambas variables apuntan al *mismo* objeto en el Heap.
-  * **Ejemplos Comunes:** Todas las clases (`class`), las cadenas (`string`) y los arrays (aunque los strings son inmutables, se comportan como referencia).
-
-#### 📝 Analogía de la Copia:
-
-Imagina que copias la **dirección de tu casa** en dos sobres. Tienes dos sobres (variables), pero ambos apuntan a la *misma casa*. Si entras por el sobre 1 y pintas la pared (modificas el objeto), si luego entras por el sobre 2, verás la pared pintada.
+| Concepto | Explicación Simple | Analogía |
+| :--- | :--- | :--- |
+| **¿Qué guardan?** | La **dirección** o la "llave" del objeto que vive en otro lugar. | Una **llave de coche**. |
+| **¿Dónde viven?** | En el **Heap** (Montón). Piensa en esto como un almacén grande y dinámico, gestionado por el Garbage Collector (GC). | |
+| **Al copiar...** | Se hace una **copia de la dirección (la llave)**. Ambas variables apuntan al mismo objeto. | Si copias la llave, tienes **dos llaves** que abren el **mismo coche**. Si pintas el coche usando una llave, la otra llave también abrirá el coche pintado. |
+| **Ejemplos** | Todas las clases (`class`), arrays, listas (`List<T>`). | |
 
 #### Ejemplo de Código (`class`):
 
 ```csharp
-public class Punto
-{
-    public int X;
-    public int Y;
-}
+public class Punto { public int X; }
 
-var puntoA = new Punto { X = 10, Y = 20 };
-var puntoB = puntoA; // Se copia la REFERENCIA (ambos apuntan al mismo objeto)
-puntoB.X = 50;       // Cambiamos el objeto compartido
+var original = new Punto { X = 10 };
+var referencia = original; // 🔑 Se copia la referencia (la dirección).
+referencia.X = 50;         // Modificamos el objeto COCHE compartido.
 
-Console.WriteLine($"A: {puntoA.X}"); // Output: A: 50 (El original SÍ cambia)
-Console.WriteLine($"B: {puntoB.X}"); // Output: B: 50
+Console.WriteLine($"Original: {original.X}"); // Output: 50 (¡SÍ cambia!)
+Console.WriteLine($"Referencia: {referencia.X}"); // Output: 50
 ```
+
+### 💡 Resumen Rápido (Entrevista)
+
+> La diferencia principal es el **comportamiento de la copia**: ¿Se copia el **valor** real (independiente) o se copia la **dirección** (compartida)?
+
+| Aspecto | Tipo de Valor (`struct`, `int`) | Tipo de Referencia (`class`) |
+| :--- | :--- | :--- |
+| **Memoria** | **Stack** (Rápido, estático) | **Heap** (Gestionado por el GC) |
+| **Comportamiento** | **Independiente** (La copia no afecta al original) | **Compartido** (La copia SÍ afecta al original) |
+| **Uso Ideal** | Objetos pequeños y rápidos (ej: Coordenadas, IDs) | Lógica de negocio, colecciones grandes, objetos complejos |
+
 
 ## 3\. 🧬 Programación Orientada a Objetos (POO)
 
-### Clases y Herencia
+### ✍️ Convenciones de Nomenclatura (Estándar C\#)
 
-C\# utiliza la convención **PascalCase** para clases y métodos (`NombreMetodo`) y **camelCase** para variables locales (`miVariable`).
+Seguir estas convenciones de estilo es crucial para el *Clean Code* y la consistencia en proyectos .NET:
 
-C\# se basa fuertemente en el paradigma POO. Es vital entender cómo se definen las estructuras de datos y cómo interactúan.
+| Elemento | Convención | Estilo | Ejemplo | Acceso Sugerido |
+| :--- | :--- | :--- | :--- | :--- |
+| **Clases, Métodos, Propiedades, Namespaces** | **PascalCase** | `Public Name` | `public string NombreUsuario { get; set; }` | `public` |
+| **Parámetros de Métodos, Variables Locales** | **camelCase** | `private name` | `void Proceso(int idUsuario)` | `var` / local |
+| **Campos Privados (Fields)** | **\_camelCase** | `private _name` | `private int _stockMinimo;` | `private` |
+| **Interfaces** | **PascalCase Prefijo I** | `Interface Name` | `public interface IRepositorio;` | `public` |
 
-### Anatomía de una Clase Típica
+### Anatomía de una Clase Típica y Colecciones
 
-Una **clase** es la plantilla para crear objetos. Debe seguir la convención **PascalCase** (`NombreClase`, `NombreMetodo`).
+Una **clase** es la plantilla para crear objetos.
+
+  * **Creación de Objeto:** A diferencia de JavaScript, donde a veces puedes omitir `new`, en C\# la instancia de una clase siempre requiere **`new`** (excepto en DI). `var object = new Class();`
+
+<!-- end list -->
 
 ```csharp
 public class Producto
 {
-    // 1. Campo (Field): Variable interna de la clase, típicamente privada.
-    private int _stockMinimo = 5;
+    // 1. Campo (Field) Variable interna de la clase, típicamente privada con convención _camelCase
+    private int _stockMinimo = 5;
 
-    // 2. Propiedad (Property): Encapsula el acceso al campo, controlando su lectura/escritura.
+    // 2. Propiedad (Property): Encapsula el acceso al campo, controlando su lectura/escritura (pública con PascalCase)
     //    Usando 'auto-implemented property' (lo más común):
-    public string Nombre { get; set; }
+    public string Nombre { get; set; }
 
-    // 3. Constructor: Método especial que se ejecuta al crear el objeto (con 'new').
-    public Producto(string nombreInicial)
-    {
-        Nombre = nombreInicial;
-    }
+    // 3. Constructor: Método especial que se ejecuta al crear el objeto (con 'new').
+    public Producto(string nombreInicial)
+    {
+        Nombre = nombreInicial;
+    }
 
-    // 4. Método (Method): Define la acción o comportamiento del objeto.
+    // 4. Método (Method): Define la acción o comportamiento del objeto.
     public void AñadirStock(int cantidad)
     {
         // Lógica de negocio
@@ -223,21 +221,111 @@ public class Producto
 // Uso:
 var lapiz = new Producto("Lápiz HB"); 
 lapiz.AñadirStock(10);
+}
+```
+
+#### Colecciones Básicas
+
+Las colecciones te permiten agrupar datos:
+
+  * **`array`:** Colección de tamaño fijo y del mismo tipo. `int[] numeros = new int[5];`
+  * **`List<T>`:** Colección dinámica (genérica) del mismo tipo.
+  * **`Dictionary<TKey, TValue>`:** Colección de pares clave-valor (genérica).
+  * **`HashSet<T>`:** Colección sin orden y que garantiza que **no hay duplicados**.
+  * **`Tuple`:** Tipo de valor que permite agrupar varios elementos relacionados de diferentes tipos. `(int id, string name) user = (1, "Anna");`
+
+### Modificadores de Acceso y Sobrecarga
+
+| Modificador | Acceso | Descripción |
+| :--- | :--- | :--- |
+| **`public`** | Ilimitado | Accesible desde cualquier parte del código. |
+| **`private`** | Limitado | Solo accesible **dentro de la misma clase**. (Recomendado para campos internos). |
+| **`protected`** | Limitado | Accesible dentro de la misma clase y por las **clases hijas (heredadas)**. |
+
+#### Ejemplos de Modificadores de Acceso
+
+```csharp
+public class CuentaBancaria
+{
+    // 1. private: Solo accesible dentro de esta clase (Encapsulación).
+    private decimal _saldo = 1000m; 
+
+    // 2. protected: Accesible aquí y en clases que hereden de CuentaBancaria.
+    protected decimal Interes = 0.05m; 
+
+    // 3. public: Accesible desde cualquier lugar.
+    public string NumeroCuenta { get; set; }
+
+    // Método público que interactúa con el campo privado
+    public decimal ObtenerSaldo() 
+    {
+        return _saldo;
+    }
+}
+
+public class CuentaAhorro : CuentaBancaria
+{
+    public void CalcularInteres()
+    {
+        // ✅ Acceso permitido a 'protected' (Interes), porque es una clase hija.
+        decimal nuevoInteres = this._saldo * this.Interes; 
+        
+        // ❌ Error de compilación si intentamos acceder a '_saldo' directamente,
+        // porque '_saldo' es 'private' en la clase base.
+    }
+}
+
+// Uso desde fuera de las clases:
+var cuenta = new CuentaBancaria();
+cuenta.NumeroCuenta = "12345";       // ✅ OK: Es public
+// cuenta._saldo = 500m;             // ❌ Error: Es private
+// decimal interes = cuenta.Interes; // ❌ Error: Es protected
+```
+
+### Sobrecarga de Métodos (Overloading)
+
+La sobrecarga permite definir **múltiples métodos con el mismo nombre** dentro de una clase, siempre y cuando tengan **diferentes firmas**. La firma se define por el **número** o el **tipo** de sus parámetros.
+
+> **Importante:** El tipo de retorno del método **no** es suficiente para diferenciar una sobrecarga.
+
+#### Ejemplo de Sobrecarga
+
+```csharp
+public class Calculadora
+{
+    // Sobrecarga 1: Suma de dos enteros
+    public int Sumar(int a, int b) 
+    {
+        return a + b;
+    }
+
+    // Sobrecarga 2: Suma de tres enteros (diferente número de parámetros)
+    public int Sumar(int a, int b, int c) 
+    {
+        return a + b + c;
+    }
+
+    // Sobrecarga 3: Suma de dos decimales (diferente tipo de parámetros)
+    public decimal Sumar(decimal a, decimal b) 
+    {
+        return a + b;
+    }
+}
+
+// Uso: El compilador elige automáticamente qué método usar
+var calc = new Calculadora();
+var resultadoInt = calc.Sumar(5, 10);        // Llama a Sobrecarga 1
+var resultadoDecimal = calc.Sumar(5.5m, 10m);  // Llama a Sobrecarga 3
 ```
 
 ### Clases y Herencia: `virtual` vs `override`
 
-La **Herencia** permite que una clase hija adquiera las propiedades y métodos de una clase padre. Los conceptos `virtual` y `override` son la base del **Polimorfismo** y son preguntas garantizadas en cualquier entrevista.
+La **Herencia** permite que una clase hija adquiera las propiedades y métodos de una clase padre. Los conceptos `virtual` y `override` son la base del **Polimorfismo**.
 
-Para permitir que un método sea modificado por una clase hija, usamos `virtual` y `override`.
-
-```markdown
 | Palabra Clave | Uso | Propósito |
 | :--- | :--- | :--- |
 | **`virtual`** | Se define en el **método de la clase padre**. | Permite que este comportamiento **pueda ser modificado** (sobrescrito) por las clases que hereden de ella. |
 | **`override`** | Se define en el **método de la clase hija**. | **Reemplaza** el comportamiento definido en la clase padre. |
-```
-
 #### Ejemplo de Código:
 
 ```csharp
@@ -290,12 +378,29 @@ public class RepositorioSql : IGuardable
     }
 }
 ```
+## 4\. 🔗 Datos, Serialización y Funcional
 
-## 4\. 🚀 Funciones de Primera Clase y Delegados (Callbacks)
+### Serialización y Deserialización
+
+Es el proceso de **convertir un objeto C\#** (como una instancia de una clase) **en un formato de transmisión** (como JSON o XML) y viceversa. Esto es fundamental para las API Web.
+
+  * **Serialización:** `Objeto C#` $\rightarrow$ `JSON/XML` (Para enviar datos a un cliente).
+  * **Deserialización:** `JSON/XML` $\rightarrow$ `Objeto C#` (Para recibir datos del cliente).
+
+La biblioteca estándar para esto en .NET es **`System.Text.Json`**.
+
+```csharp
+// Serialización a JSON
+var producto = new Producto("Teclado");
+string json = System.Text.Json.JsonSerializer.Serialize(producto);
+// Output: {"Nombre":"Teclado"}
+```
+
+### 🚀 Funciones de Primera Clase y Delegados (Callbacks)
 
 > **Concepto Clave:** En C\#, las funciones pueden tratarse como variables. Esto permite pasar lógica como parámetro (Callbacks).
 
-### 1\. Action (Void)
+#### 1\. Action (Void)
 
 Delegado que **NO retorna valor** (void).
 
@@ -317,7 +422,7 @@ var miLogger = (string msg) => Console.WriteLine($"LOG: {msg}");
 ProcesarDatos(miLogger, "Usuario registrado");
 ```
 
-### 2\. Func (Return)
+#### 2\. Func (Return)
 
 Delegado que **SÍ retorna valor**.
 
@@ -339,20 +444,32 @@ var aMayusculas = (string s) => s.ToUpper();
 Transformar(aMayusculas, "hola mundo"); // Imprime: HOLA MUNDO
 ```
 
+#### 3\. Lambda Functions (`=>`)
+
+Es la sintaxis concisa para crear delegados (`Action` o `Func`) en línea.
+
+```csharp
+// Lógica que recibe string y devuelve string (Func)
+Func<string, string> aMayusculas = (texto) => texto.ToUpper(); 
+
+// Lógica que recibe string y no devuelve nada (Action)
+Action<string> logger = (msg) => Console.WriteLine($"LOG: {msg}");
+```
+
 ## 5\. 🔍 Generics y Colecciones
 
 Los **Genéricos (`<T>`)** nos permiten escribir código reutilizable y seguro sin especificar el tipo de dato exacto hasta el momento de usarlo.
 
-> **¿Por qué usarlos?** Evitan el "Boxing/Unboxing" (coste de rendimiento) y garantizan que no metas un `int` en una lista de `string`.
+> **¿Por qué usarlos?** Evitan el "Boxing/Unboxing" (coste de rendimiento) y garantizan que no metas un `int` en una lista de `string` (seguridad de tipos).
 
 ```csharp
 // Lista genérica: Solo acepta enteros
-List<int> numeros = new List<int>(); 
+List<int> numeros = new List<int>(); 
 
 // Método genérico
 public T DevolverElemento<T>(T elemento)
 {
-    return elemento;
+    return elemento;
 }
 ```
 
