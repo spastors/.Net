@@ -1,14 +1,14 @@
 # 📘 Guía de Iniciación a .NET (Backend)
 
 > **Resumen:** Notas técnicas sobre el ecosistema .NET, sintaxis moderna de C\# y patrones para desarrollo backend.
-> **Versión:** Enfocado en .NET 9 (LTS) y C\# 13.
+> **Versión:** Enfocado en .NET 8 LTS / 9 STS y C\# 13.
 
 ## 1\. 🛠️ Configuración y Entorno
 
 Para empezar a trabajar con el ecosistema moderno de Microsoft.
 
   * **SDK:** Descargar la versión LTS (Long Term Support) recomendada: [.NET Download](https://dotnet.microsoft.com/es-es/download/dotnet).
-  * **IDE Recomendado:** Visual Studio 2026 (Community) o VS Code con la extensión **C\# Dev Kit**. [Visual Studio Download](https://visualstudio.microsoft.com/es/downloads/)
+  * **IDE Recomendado:** Visual Studio 2022 o 2026 (Community) o VS Code con la extensión **C\# Dev Kit**. [Visual Studio Download](https://visualstudio.microsoft.com/es/downloads/)
 
 ### Comandos Esenciales (CLI)
 
@@ -61,7 +61,7 @@ string  json        = """             
                       """;            // Raw String Literal (C# 11+): Ideal para JSON/XML multilínea
 
 // 3. LÓGICA (BOOLEAN)
-bool    esValido    = true;           // Ocupa 1 byte (teóricamente 1 bit)
+bool    esValido    = true;           // Ocupa 1 byte (teóricamente 1 byte)
 
 // 4. FECHAS (DATES - MODERN .NET)
 DateTime fechaHora  = DateTime.Now;             // 2025-10-05 14:30:00 (Pesado)
@@ -268,7 +268,7 @@ public class CuentaAhorro : CuentaBancaria
     public void CalcularInteres()
     {
         // ✅ Acceso permitido a 'protected' (Interes), porque es una clase hija.
-        decimal nuevoInteres = this._saldo * this.Interes; 
+        decimal nuevoInteres = this.ObtenerSaldo() * this.Interes;
         
         // ❌ Error de compilación si intentamos acceder a '_saldo' directamente,
         // porque '_saldo' es 'private' en la clase base.
