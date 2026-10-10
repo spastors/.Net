@@ -539,3 +539,41 @@ var query = from n in numeros
             where n > 5
             select n;
 ```
+
+## 7\. 🌐 Instalación y verificación de IIS (Internet Information Services)
+
+IIS es el servidor web de Microsoft integrado en Windows. Para utilizarlo, primero hay que habilitarlo como una característica del sistema operativo.
+
+### 1. Instalación de IIS
+
+Siga estos pasos para activar IIS en Windows:
+
+1. Abra el **Panel de control**.
+2. Acceda a **Programas > Programas y características**.
+3. Haga clic en **Activar o desactivar las características de Windows**.
+4. Busque **Internet Information Services (IIS)** y marque la casilla principal.
+5. Expanda el nodo de IIS y compruebe que están seleccionados los componentes necesarios, como:
+   - **Herramientas de administración web** (*Web Management Tools*).
+   - **Servicios de World Wide Web** (*World Wide Web Services*).
+6. Haga clic en **Aceptar** y espere a que Windows complete la instalación.
+
+<img width="413" height="367" alt="image" src="https://github.com/user-attachments/assets/cc564524-be46-45eb-a1a5-b11158d5b46f" />
+
+
+### 2. ✅ Verificación de la instalación
+
+Para comprobar que IIS se ha instalado correctamente y que el servidor web está funcionando:
+
+1. Abra su navegador web.
+2. Escriba la siguiente dirección en la barra de direcciones:
+
+   ```text
+   http://localhost
+   ```
+
+3. Pulse **Enter**.
+
+Si todo funciona correctamente, aparecerá la página de bienvenida predeterminada de IIS, lo que indica que el servidor web está activo en el equipo local.
+
+<img width="601" height="315" alt="image" src="https://github.com/user-attachments/assets/e7b73186-1a2c-4325-8ed8-f27a3a39c728" />
+
