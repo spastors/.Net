@@ -1,9 +1,26 @@
 # 📘 Guía de Iniciación a .NET (Backend)
 
 > **Resumen:** Notas técnicas sobre el ecosistema .NET, sintaxis moderna de C\# y patrones para desarrollo backend.
-> **Versión:** Enfocado en .NET 8 LTS y C\# 12.
+> **Versión:** Referencia actualizada para .NET 10 LTS y C\# 14 (octubre de 2026).
 
-## 1\. 🛠️ Configuración y Entorno
+## 1. .NET Framework vs .NET moderno: diferencias e historia
+
+### Vista rápida
+
+- **.NET Framework (2002):** plataforma original para Windows. Sigue existiendo para aplicaciones heredadas; versión 4.8.1.
+- **.NET Core (2016–2019):** rediseño abierto y multiplataforma. Versiones 1.0–3.1.
+- **.NET (desde 2020):** continuación unificada de .NET Core. Para proyectos nuevos, es la opción habitual.
+
+| Línea | Sistemas | Uso típico |
+|---|---|---|
+| .NET Framework 4.8.1 | Windows | Mantener aplicaciones existentes, ASP.NET clásico, Web Forms, WCF |
+| .NET 10 LTS | Windows, Linux, macOS | Nuevas APIs, servicios, apps de consola y escritorio compatible |
+
+**Versiones y soporte (octubre de 2026):** .NET 10 es LTS y recibe soporte hasta el 14-11-2028. .NET 9 es STS y termina el 10-11-2026. .NET Framework 4.8.1 se mantiene según el ciclo de vida de Windows donde está instalado. Consulta la [política de soporte de .NET](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) y el [ciclo de vida de .NET Framework](https://learn.microsoft.com/lifecycle/products/microsoft-net-framework).
+
+> **Regla rápida:** Framework = legado Windows; .NET moderno = multiplataforma y recomendado para desarrollo nuevo.
+
+## 2\. 🛠️ Configuración y Entorno
 
 Para empezar a trabajar con el ecosistema moderno de Microsoft.
 
@@ -23,9 +40,11 @@ dotnet run                  # Ejecutar proyecto
 dotnet build                # Compilar proyecto
 ```
 
-## 2\. ⌨️ Sintaxis y Sistema de Tipos
+## 3\. ⌨️ Sintaxis y Sistema de Tipos
 
 C\# es un lenguaje **fuertemente tipado** (aunque tiene inferencia de tipos) y **compilado**.
+
+**¿Compilado?** El compilador convierte C# a IL (código intermedio) al compilar. El runtime .NET ejecuta ese IL y normalmente el JIT lo traduce a código máquina para la arquitectura actual. No significa que el programa se convierta siempre en un único ejecutable nativo.
 
 ### Fundamentos de Sintaxis y Control
 
@@ -77,7 +96,7 @@ byte    unByte      = 255;            // De 0 a 255 (Para manipulaci�
 
 Esta es una pregunta clásica de entrevista.
 
-  * **`var`**: Inferencia de tipo en **tiempo de compilación**. El compilador "adivina" el tipo y **no cambia**. Es lo estándar hoy en día.
+  * **`var`**: Inferencia estática en **tiempo de compilación**. El tipo queda fijado y no cambia; no equivale a `dynamic`.
   * **`const`**: Valor inmutable. Debe asignarse al declararse.
   * **`dynamic`**: Se resuelve en **tiempo de ejecución**. Evita el chequeo de tipos del compilador (usar con cuidado, pierdes seguridad).
 
@@ -95,10 +114,20 @@ dynamic datos = "Hola"; 
 datos = 10; // Esto es válido en dynamic, pero daría error en var
 ```
 
+#### `var` en C# vs JavaScript
+
+| C# `var` | JavaScript `var` |
+|---|---|
+| El compilador infiere un tipo estático una vez | Puede contener valores de tipos distintos |
+| Solo variable local con inicializador | Puede declararse sin inicializar; tiene alcance de función |
+| `var x = 1; x = "a";` no compila | `var x = 1; x = "a";` es válido |
+
+En JavaScript moderno suele preferirse `let` o `const`, cuyo alcance es de bloque.
+
 #### Strings: Interpolación y Verbatim
 
   * **Interpolación (`$`)**: Insertar variables directamente.
-  * **Verbatim (`@`)**: Ignora caracteres de escape (útil para rutas de archivos).
+  * **Verbatim (`@`)**: conserva barras y saltos tal como se escriben; una comilla se duplica (`""`). Útil para rutas de archivos
 
 <!-- end list -->
 
@@ -106,7 +135,27 @@ datos = 10; // Esto es válido en dynamic, pero daría error en var
 string nombre = "Ana";
 // Combinando ambos (muy útil en rutas o JSON a mano)
 string ruta = $@"C:\Usuarios\{nombre}\Documentos"; 
+string texto = @"Primera línea
+Segunda línea; ruta: C:\temp";
+string json = @"{""activo"":true}"; // Comillas dobles duplicadas
 ```
+
+`@"{}"` es una cadena literal de dos llaves; no interpola ni procesa escapes. Para interpolar, usa `$"{nombre}"`. En una cadena interpolada, las llaves literales se escriben `{{` y `}}`.
+
+#### Nulabilidad: `?`, `?.` y `??`
+
+- `string?`: referencia que puede ser `null` (con *nullable reference types* habilitados).
+- `int?`: abreviatura de `Nullable<int>`; un tipo de valor que admite `null`.
+- `?.`: acceso condicional; devuelve `null` si el receptor es `null`.
+- `??`: valor alternativo si la expresión de la izquierda es `null`.
+
+```csharp
+string? nombre = null;
+int? longitud = nombre?.Length;
+int segura = longitud ?? 0;
+```
+
+`?` no añade una comprobación automática en ejecución para referencias: el compilador analiza nulabilidad y emite advertencias.
 
 ## 💾 Tipos de Valor vs Tipos de Referencia 
 
@@ -215,7 +264,7 @@ Aquí **no hay dos cuentas**, hay **una sola compartida por dos variables**.
 | **Referencia** | La dirección   | ✅ Sí                 | `class`, `array`, `List<T>`        |
 
 
-## 3\. 🧬 Programación Orientada a Objetos (POO)
+## 4\. 🧬 Programación Orientada a Objetos (POO)
 
 ### ✍️ Convenciones de Nomenclatura (Estándar C\#)
 
@@ -370,6 +419,9 @@ La **Herencia** permite que una clase hija adquiera las propiedades y métodos d
 | :--- | :--- | :--- |
 | **`virtual`** | Se define en el **método de la clase padre**. | Permite que este comportamiento **pueda ser modificado** (sobrescrito) por las clases que hereden de ella. |
 | **`override`** | Se define en el **método de la clase hija**. | **Reemplaza** el comportamiento definido en la clase padre. |
+
+**`base`** permite acceder desde la clase hija a la implementación de la clase padre. Se usa para reutilizar o ampliar su comportamiento; también puede llamar al constructor base con `: base(...)`.
+
 #### Ejemplo de Código:
 
 ```csharp
@@ -387,7 +439,7 @@ public class Manager : Empleado
     // Usamos override para cambiar el comportamiento del padre.
     public override string CalcularSalario() 
     {
-        return base.CalcularSalario() + " Más bonificación por objetivos de equipo.";
+        return base.CalcularSalario() + " Más bonificación por objetivos.";
         // 'base' llama a la implementación original del padre.
     }
 }
@@ -422,7 +474,7 @@ public class RepositorioSql : IGuardable
     }
 }
 ```
-## 4\. 🔗 Datos, Serialización y Funcional
+## 5\. 🔗 Datos, Serialización y Funcional
 
 ### Serialización y Deserialización
 
@@ -443,6 +495,24 @@ string json = System.Text.Json.JsonSerializer.Serialize(producto);
 ### 🚀 Funciones de Primera Clase y Delegados (Callbacks)
 
 > **Concepto Clave:** En C\#, las funciones pueden tratarse como variables. Esto permite pasar lógica como parámetro (Callbacks).
+
+### Principios de programación funcional
+
+- **Funciones puras:** mismo input → mismo output; sin efectos secundarios.
+- **Inmutabilidad:** evita modificar datos compartidos; crea valores nuevos.
+- **Funciones de primera clase:** asigna funciones a variables, pásalas como argumentos y devuélvelas.
+- **Composición:** combina funciones pequeñas para construir una transformación mayor.
+- **Declarativo:** describe el resultado (`Where`, `Select`) en lugar de los pasos manuales.
+
+```csharp
+var numeros = new[] { -1, 2, 3 };
+var resultado = numeros
+    .Where(n => n > 0)
+    .Select(n => n * 2)
+    .ToArray(); // transforma; no modifica la lista original
+```
+
+LINQ suele evaluar en diferido (`IEnumerable<T>`); la consulta se ejecuta al enumerarla. `ToArray()` materializa el resultado.
 
 #### 1\. Action (Void)
 
@@ -500,7 +570,7 @@ Func<string, string> aMayusculas = (texto) => texto.ToUpper();
 Action<string> logger = (msg) => Console.WriteLine($"LOG: {msg}");
 ```
 
-## 5\. 🔍 Generics y Colecciones
+## 6\. 🔍 Generics y Colecciones
 
 Los **Genéricos (`<T>`)** nos permiten escribir código reutilizable y seguro sin especificar el tipo de dato exacto hasta el momento de usarlo.
 
@@ -517,7 +587,7 @@ public T DevolverElemento<T>(T elemento)
 }
 ```
 
-## 6\. 📊 LINQ (Language Integrated Query)
+## 7\. 📊 LINQ (Language Integrated Query)
 
 La herramienta más potente de .NET para manipular datos (Arrays, Listas, Bases de Datos).
 
@@ -536,11 +606,12 @@ var mayoresDeCinco = numeros.Where(n => n > 5).ToList();
 
 // 2. Query Syntax
 var query = from n in numeros
-            where n > 5
+            where n > 5 && n < 10
+            order by n
             select n;
 ```
 
-## 7\. 🌐 Instalación y verificación de IIS (Internet Information Services)
+## 8\. 🌐 Instalación y verificación de IIS (Internet Information Services)
 
 IIS es el servidor web de Microsoft integrado en Windows. Para utilizarlo, primero hay que habilitarlo como una característica del sistema operativo.
 
