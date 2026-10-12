@@ -1,7 +1,7 @@
 # 📘 Guía de Iniciación a .NET (Backend)
 
 > **Resumen:** Notas técnicas sobre el ecosistema .NET, sintaxis moderna de C\# y patrones para desarrollo backend.
-> **Versión:** Referencia actualizada para .NET 10 LTS y C\# 14 (octubre de 2026).
+> **Versión:** Referencia actualizada para .NET 10 LTS (Long Term Support) y C\# 14 (octubre de 2026).
 
 ## 1. .NET Framework vs .NET moderno: diferencias e historia
 
@@ -14,9 +14,9 @@
 | Línea | Sistemas | Uso típico |
 |---|---|---|
 | .NET Framework 4.8.1 | Windows | Mantener aplicaciones existentes, ASP.NET clásico, Web Forms, WCF |
-| .NET 10 LTS | Windows, Linux, macOS | Nuevas APIs, servicios, apps de consola y escritorio compatible |
+| .NET 10 LTS (Long Term Support) | Windows, Linux, macOS | Nuevas APIs, servicios, apps de consola y escritorio compatible |
 
-**Versiones y soporte (octubre de 2026):** .NET 10 es LTS y recibe soporte hasta el 14-11-2028. .NET 9 es STS y termina el 10-11-2026. .NET Framework 4.8.1 se mantiene según el ciclo de vida de Windows donde está instalado. Consulta la [política de soporte de .NET](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) y el [ciclo de vida de .NET Framework](https://learn.microsoft.com/lifecycle/products/microsoft-net-framework).
+**Versiones y soporte (octubre de 2026):** .NET 10 es una versión de soporte largo (**LTS**, 3 años), hasta el 14-11-2028. .NET 9 es de soporte estándar (**STS**, 2 años) y termina el 10-11-2026. .NET Framework 4.8.1 se mantiene según el ciclo de vida de Windows donde está instalado. Consulta la [política de soporte de .NET](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) y el [ciclo de vida de .NET Framework](https://learn.microsoft.com/lifecycle/products/microsoft-net-framework).
 
 > **Regla rápida:** Framework = legado Windows; .NET moderno = multiplataforma y recomendado para desarrollo nuevo.
 
@@ -24,7 +24,7 @@
 
 Para empezar a trabajar con el ecosistema moderno de Microsoft.
 
-  * **SDK:** Descargar la versión LTS (Long Term Support) recomendada: [.NET Download](https://dotnet.microsoft.com/es-es/download/dotnet).
+  * **SDK:** herramientas para crear y compilar proyectos .NET. Descarga una versión LTS (Long Term Support): [.NET Download](https://dotnet.microsoft.com/es-es/download/dotnet).
   * **IDE Recomendado:** Visual Studio 2022 o 2026 (Community) o VS Code con la extensión **C\# Dev Kit**. [Visual Studio Download](https://visualstudio.microsoft.com/es/downloads/)
 
 ### Comandos Esenciales (CLI)
@@ -42,9 +42,9 @@ dotnet build                # Compilar proyecto
 
 ## 3\. ⌨️ Sintaxis y Sistema de Tipos
 
-C\# es un lenguaje **fuertemente tipado** (aunque tiene inferencia de tipos) y **compilado**.
+C\# es un lenguaje **tipado**: cada variable tiene un tipo que determina qué valores admite. Es **compilado**: el código se traduce antes de ejecutarse.
 
-**¿Compilado?** El compilador convierte C# a IL (código intermedio) al compilar. El runtime .NET ejecuta ese IL y normalmente el JIT lo traduce a código máquina para la arquitectura actual. No significa que el programa se convierta siempre en un único ejecutable nativo.
+**¿Qué ocurre al ejecutar?** El compilador convierte C# a **IL** (*lenguaje intermedio*). El **runtime .NET** —el entorno que ejecuta la aplicación— carga ese código. Normalmente, el **JIT** (*compilador justo a tiempo*) traduce cada parte a instrucciones del procesador (código máquina) cuando hacen falta. Por eso, compilar C# no siempre produce un único ejecutable nativo.
 
 ### Fundamentos de Sintaxis y Control
 
@@ -98,7 +98,7 @@ Esta es una pregunta clásica de entrevista.
 
   * **`var`**: Inferencia estática en **tiempo de compilación**. El tipo queda fijado y no cambia; no equivale a `dynamic`.
   * **`const`**: Valor inmutable. Debe asignarse al declararse.
-  * **`dynamic`**: Se resuelve en **tiempo de ejecución**. Evita el chequeo de tipos del compilador (usar con cuidado, pierdes seguridad).
+  * **`dynamic`**: El tipo se comprueba mientras el programa se ejecuta. El compilador no puede detectar algunos errores antes; úsalo cuando sea necesario.
 
 <!-- end list -->
 
@@ -174,7 +174,7 @@ Cuando asignas una variable a otra, se hace una **copia independiente**.
 | Concepto | Explicación Simple | Analogía |
 | :--- | :--- | :--- |
 | **¿Qué guardan?** | Guardan **el dato directamente** (por ejemplo el número `10` o el valor `true`). | Una **fotografía en papel**. |
-| **¿Dónde viven?** | Normalmente en la memoria rápida llamada **Stack (pila)**. | Una **mesa de trabajo pequeña y rápida**. |
+| **¿Dónde viven?** | Depende del contexto: pueden estar dentro de otro objeto o en la pila de llamadas (memoria temporal de los métodos activos). | Como una hoja guardada dentro de una carpeta o sobre el escritorio: depende de dónde esté el contenedor. |
 | **Al copiar...** | Se crea una **copia nueva e independiente** del dato. | Haces **otra foto igual**, pero es una hoja distinta. |
 | **Ejemplos** | Tipos simples como `int`, `bool`, `decimal` y estructuras (`struct`). | |
 
@@ -210,7 +210,7 @@ Un **tipo de referencia no guarda el objeto en sí**, guarda una **referencia (d
 | Concepto | Explicación Simple | Analogía |
 | :--- | :--- | :--- |
 | **¿Qué guardan?** | Guardan una **referencia (dirección)** que apunta a un objeto. | Un **enlace a un archivo compartido**. |
-| **¿Dónde viven?** | El objeto vive en el **Heap (montón)**, una zona de memoria más grande. | Un **almacén grande de objetos**. |
+| **¿Dónde viven?** | Normalmente, los objetos creados con `new` se guardan en el **heap** (zona donde .NET guarda y administra objetos). | Como un documento en un archivador; la variable conserva el acceso para encontrarlo. |
 | **Al copiar...** | Se copia **la referencia**, no el objeto. Ambas variables apuntan al mismo. | Dos personas abren **el mismo archivo**. |
 | **Ejemplos** | Clases (`class`), arrays, listas (`List<T>`), diccionarios, etc. | |
 
@@ -512,7 +512,7 @@ var resultado = numeros
     .ToArray(); // transforma; no modifica la lista original
 ```
 
-LINQ suele evaluar en diferido (`IEnumerable<T>`); la consulta se ejecuta al enumerarla. `ToArray()` materializa el resultado.
+LINQ suele usar **evaluación diferida**: espera hasta que el programa recorre los resultados para ejecutar la consulta. Por ejemplo, `ToArray()` la ejecuta y guarda los resultados en un array.
 
 #### 1\. Action (Void)
 
