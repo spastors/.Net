@@ -1,0 +1,25 @@
+Use case: infographic-diagram.
+Create one simple educational diagram in Spanish, for beginner .NET documentation, titled "Petición HTTP POST: headers y body". Landscape, white background, modern flat infographic with rounded cards, large readable exact monospace for HTTP/JSON and clean sans-serif for captions. Blue request arrow and teal response arrow. Generous spacing, avoid technical clutter.
+LEFT a small browser card "FRONTEND" with subtitle "Envía los datos de un producto".
+MIDDLE a large request card "PETICIÓN HTTP", organized into three clearly visually separated horizontal sections:
+1 section label "Método + ruta"; exact code "POST /api/productos"; caption "POST solicita crear un producto".
+2 section label "HEADERS · información sobre la petición"; exact code two separate lines:
+"Content-Type: application/json"
+"Accept: application/json"
+Caption below: "Content-Type: formato que envío" and "Accept: formato que quiero recibir".
+3 section label "BODY · datos que envío"; exact multiline JSON:
+{
+  "nombre": "Teclado",
+  "precio": 29.90
+}
+Caption "El cuerpo contiene los datos del producto".
+RIGHT a backend card "BACKEND · ASP.NET Core" then "Endpoint: POST /api/productos" then "Controlador" and short caption "Lee los datos y crea el producto".
+An unmistakable BLUE arrow points LEFT browser -> MIDDLE request -> RIGHT backend labeled "1. Enviar petición". Below all cards a return path TEAL arrow goes from RIGHT backend back to LEFT frontend labeled "2. Recibir respuesta".
+Along return path, include compact response card "RESPUESTA HTTP" showing exact lines:
+"201 Created"
+"Content-Type: application/json"
+and exact JSON:
+{"id":42,"nombre":"Teclado","precio":29.90}
+Caption "201: producto creado".
+Footer text "Headers = información del mensaje · Body = contenido del mensaje".
+Constraints: all wording in simple accurate Spanish. Request headers belong inside request card above body. Response is a separate card on return arrow. Preserve case and spelling of HTTP headers; all code syntax valid. Headers are not query parameters. Backend arrow direction and return arrow correct. The endpoint verb and path match request exactly. Do not add databases, HTTPS/TLS internals, auth tokens, classes, C# code or complicated details. Do not add additional requests. Diagram is illustrative of an API that creates a product.
