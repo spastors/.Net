@@ -303,14 +303,15 @@ Seguir estas convenciones de estilo es crucial para el *Clean Code* y la consist
 | :--- | :--- | :--- | :--- | :--- |
 | **Clases, Métodos, Propiedades, Namespaces** | **PascalCase** | `Public Name` | `public string NombreUsuario { get; set; }` | `public` |
 | **Parámetros de Métodos, Variables Locales** | **camelCase** | `private name` | `void Proceso(int idUsuario)` | `var` / local |
-| **Campos Privados (Fields)** | **\_camelCase** | `private _name` | `private int _stockMinimo;` | `private` |
-| **Interfaces** | **PascalCase Prefijo I** | `Interface Name` | `public interface IRepositorio;` | `public` |
+| **Campos Privados (Fields), incluidos los `readonly`** | **\_camelCase** | `private _name` | `private int _stockMinimo;` | `private` |
+| **Interfaces** | **Prefijo I + PascalCase** | `Interface Name` | `public interface IRepositorio;` | `public` |
 
 ### Anatomía de una Clase Típica y Colecciones
 
 Una **clase** es la plantilla para crear objetos.
 
-  * **Creación de Objeto:** A diferencia de JavaScript, donde a veces puedes omitir `new`, en C\# la instancia de una clase siempre requiere **`new`** (excepto en DI). `var object = new Class();`
+  * **Creación de Objeto:** A diferencia de JavaScript, donde a veces puedes omitir `new`, en C\# la instancia de una clase siempre requiere **`new`** (excepto en Inyección de dependencias (DI)
+). `var object = new Class();`
 
 <!-- end list -->
 
@@ -355,6 +356,56 @@ Las colecciones te permiten agrupar datos:
   * **`Dictionary<TKey, TValue>`:** Colección de pares clave-valor (genérica).
   * **`HashSet<T>`:** Colección sin orden y que garantiza que **no hay duplicados**.
   * **`Tuple`:** Tipo de valor que permite agrupar varios elementos relacionados de diferentes tipos. `(int id, string name) user = (1, "Anna");`
+
+### `static`: un miembro compartido por la clase
+
+**`static` hace que un campo o método pertenezca a la clase.** Un campo estático se comparte entre sus objetos; un campo sin `static` pertenece a cada objeto.
+
+**Analogía:** `static` es la pizarra común del aula. Sin `static`, cada alumno tiene su propio cuaderno.
+
+| Miembro | Cómo se usa | Qué se comparte |
+|---|---|---|
+| Con `static` | `Registro.Compartida` | Una misma lista para toda la clase |
+| Sin `static` | `registro.Propia` | Cada objeto tiene su propia lista |
+
+En este ejemplo:
+
+```csharp
+public static List<People> People = new List<People>();
+```
+
+- `public`: permite acceder al campo desde otras clases.
+- `static`: mantiene una lista compartida, aunque crees varios objetos de la clase que la contiene.
+- `List<People>`: tipo del campo; una lista de objetos de tipo `People`.
+- El segundo `People`: nombre del campo que guarda la lista.
+- `new List<People>()`: crea la lista inicialmente vacía. `static` permite acceder al campo sin crear un objeto de la clase que lo contiene; la lista sí se crea con `new`.
+
+**Ejemplo de lista compartida frente a listas independientes:**
+
+```csharp
+using System;
+using System.Collections.Generic;
+
+var a = new Registro();
+var b = new Registro();
+
+Registro.Compartida.Add("Ana");
+a.Propia.Add("Luis");
+
+Console.WriteLine(Registro.Compartida.Count); // 1: lista compartida
+Console.WriteLine(a.Propia.Count);           // 1: lista del objeto a
+Console.WriteLine(b.Propia.Count);           // 0: lista del objeto b
+
+public class Registro
+{
+    public static List<string> Compartida = new();
+    public List<string> Propia = new();
+}
+```
+
+- También hay **métodos estáticos**: `Math.Max(3, 7)` se llama sin crear un objeto `Math`.
+- `static` permite modificar la lista; no la hace constante ni evita conflictos si varias peticiones la modifican a la vez.
+- En una Web API, una lista estática se comparte entre las peticiones atendidas por esa aplicación. Sus datos se pierden al reiniciarla y no se comparten automáticamente entre varios servidores.
 
 ### Modificadores de Acceso y Sobrecarga
 
@@ -503,7 +554,283 @@ public class RepositorioSql : IGuardable
     }
 }
 ```
-## 5\. 🔗 Datos, Serialización y Funcional
+## 5. Arquitectura, inyección de dependencias y SOLID
+
+### 1. Arquitectura y división de responsabilidades
+
+**Separar responsabilidades** significa que cada componente se encarga de una parte del trabajo. Las capas pueden empezar como carpetas dentro del mismo proyecto; no necesitan servidores ni proyectos separados.
+
+| Componente / capa | Responsabilidad | Ejemplo |
+|---|---|---|
+| **Controlador / presentación** | Recibir HTTP, validar la entrada y delegar. Convertir el resultado en una respuesta HTTP | Leer el peso de un envío y devolver su precio |
+| **Servicio / caso de uso / aplicación** | Coordinar una operación de negocio: llamar al dominio y, cuando haga falta, guardar datos o enviar avisos | Cotizar un envío |
+| **Dominio** | Expresar las reglas del negocio, independientemente de HTTP o de la base de datos | El peso debe ser positivo; calcular la tarifa |
+| **Infraestructura** | Acceder a bases de datos y servicios externos | Guardar el envío en SQL |
+| **Interfaces** | Definir contratos entre componentes. Permitir cambiar implementaciones y simular dependencias al probar | Contrato del servicio de cotización |
+
+**Flujo de una petición:** cliente → controlador → caso de uso → reglas de dominio → resultado → respuesta HTTP. Si hay persistencia, el caso de uso llama a infraestructura mediante un contrato.
+
+- El controlador comprueba que la entrada sea aceptable; no calcula tarifas ni contiene consultas SQL.
+- El dominio protege sus reglas aunque lo use una consola o un proceso sin HTTP.
+- El caso de uso organiza el trabajo; los detalles de SQL o de un proveedor externo quedan en infraestructura.
+- Los contratos suelen definirse en aplicación o dominio; sus implementaciones dependen de esos contratos.
+
+#### Inyección de dependencias (DI)
+
+Una **dependencia** es un objeto que otro necesita para trabajar. **DI** consiste en entregar ese objeto desde fuera, normalmente por el constructor.
+
+**Analogía:** el controlador recibe una herramienta preparada; no tiene que fabricarla.
+
+- ASP.NET Core incluye un **contenedor DI**: un registro que sabe crear y conectar los componentes.
+- Registramos qué implementación corresponde a cada contrato y cuánto tiempo se reutiliza.
+- Al crear un controlador, ASP.NET Core entrega las dependencias de su constructor.
+- Esto facilita cambiar implementaciones, separar responsabilidades y probar cada componente.
+
+**Ejemplo completo: cotizar un envío.** La tarifa de muestra es 5 € más 2 € por kilogramo.
+
+```csharp
+// Program.cs: registrar servicios y activar controladores.
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+builder.Services.AddScoped<ICotizarEnvio, CotizarEnvio>();
+var app = builder.Build();
+app.MapControllers();
+app.Run();
+```
+
+```csharp
+using System;
+using Microsoft.AspNetCore.Mvc;
+
+// Contrato: qué puede pedir el controlador.
+public interface ICotizarEnvio
+{
+    decimal Ejecutar(decimal peso);
+}
+
+// Dominio: reglas de negocio, sin HTTP.
+public static class TarifaEnvio
+{
+    public static decimal Calcular(decimal peso)
+    {
+        if (peso <= 0)
+            throw new ArgumentOutOfRangeException(nameof(peso));
+        return 5m + peso * 2m;
+    }
+}
+
+// Aplicación: ejecutar el caso de uso.
+public class CotizarEnvio : ICotizarEnvio
+{
+    public decimal Ejecutar(decimal peso) => TarifaEnvio.Calcular(peso);
+}
+
+// Presentación: traducir entrada y salida HTTP.
+[ApiController]
+[Route("api/envios")]
+public class EnviosController : ControllerBase
+{
+    private readonly ICotizarEnvio _cotizarEnvio;
+
+    public EnviosController(ICotizarEnvio cotizarEnvio)
+    {
+        _cotizarEnvio = cotizarEnvio;
+    }
+
+    [HttpGet("cotizar")]
+    public IActionResult Cotizar([FromQuery] decimal peso)
+    {
+        if (peso <= 0)
+            return BadRequest("El peso debe ser positivo.");
+        return Ok(new { Precio = _cotizarEnvio.Ejecutar(peso) });
+    }
+}
+```
+
+`GET /api/envios/cotizar?peso=3` devuelve un precio de **11**. `[FromQuery]` lee el parámetro situado después de `?` en la URL. El controlador y el dominio comprueban el peso para proteger sus respectivas entradas.
+
+`AddScoped<ICotizarEnvio, CotizarEnvio>()` conecta el contrato con su implementación. El constructor recibe el servicio; no hace falta escribir `new CotizarEnvio()` dentro del controlador.
+
+### 2. Ciclos de vida de DI (Service Lifetimes)
+
+El **ciclo de vida** indica cuándo crea el contenedor un objeto y cuándo lo reutiliza. No indica cuánto dura una tarea ni si el servicio es asíncrono.
+
+| Registro | Cuándo crea una instancia | Impacto en memoria | Caso típico |
+|---|---|---|---|
+| **Transient** | Cada vez que el contenedor lo solicita | Puede crear varios objetos en una petición; más asignaciones y trabajo de limpieza de memoria | Un formateador pequeño, sin estado |
+| **Scoped** | Una vez por ámbito; en una API, normalmente por petición HTTP | Comparte la instancia dentro de la petición; peticiones distintas tienen instancias distintas | Caso de uso, repositorio o `DbContext` de EF Core |
+| **Singleton** | Una vez por contenedor; se reutiliza durante la aplicación | La instancia y los objetos que retiene permanecen disponibles durante ese tiempo | Servicio sin estado, costoso de crear y seguro para uso simultáneo |
+
+Un **ámbito (scope)** agrupa las dependencias que deben compartir una instancia. ASP.NET Core crea uno para cada petición HTTP. `DbContext` es el objeto de EF Core que consulta y guarda datos en la base de datos.
+
+**Tres alternativas para registrar el mismo servicio; elegir solo una:**
+
+```csharp
+builder.Services.AddTransient<ICotizarEnvio, CotizarEnvio>();
+builder.Services.AddScoped<ICotizarEnvio, CotizarEnvio>();
+builder.Services.AddSingleton<ICotizarEnvio, CotizarEnvio>();
+```
+
+- **Transient** significa «nuevo al solicitarlo al contenedor», no «nuevo en cada llamada a un método».
+- Un singleton se comparte entre peticiones y usuarios. No guardar en él datos propios de una petición.
+- No inyectar directamente un servicio scoped en el constructor de un singleton. El singleton viviría más que el ámbito de esa dependencia.
+- Compartir una instancia no la hace segura para ejecución simultánea. Un singleton debe soportar ese uso; scoped tampoco evita conflictos si se usa en paralelo dentro de la petición.
+- El contenedor libera los recursos de los servicios que crea y que implementan `IDisposable`: scoped al cerrar el ámbito; singleton al cerrar el contenedor. La memoria administrada se recupera después, cuando el recolector de basura determina que ya no se usa.
+
+### 3. Buenas prácticas y convenciones de código
+
+Reglas obligatorias de este proyecto:
+
+- **Campos privados:** `_camelCase`, incluidos los campos `private readonly`.
+- **Interfaces:** prefijo `I` seguido de PascalCase. Son interfaces, no clases.
+- **Parámetros y variables locales:** camelCase sin `_`.
+- **Clases, métodos y propiedades:** PascalCase. El acceso se define con sus modificadores, no con el nombre.
+
+```csharp
+public interface ICalculadoraPrecio
+{
+    decimal Calcular(decimal precioBase);
+}
+
+public class CalculadoraPrecio : ICalculadoraPrecio
+{
+    private readonly decimal _porcentaje;
+
+    public CalculadoraPrecio(decimal porcentaje)
+    {
+        _porcentaje = porcentaje;
+    }
+
+    public decimal Calcular(decimal precioBase)
+    {
+        var precioFinal = precioBase * (1 + _porcentaje);
+        return precioFinal;
+    }
+}
+```
+
+`readonly` permite asignar el campo al declararlo o en el constructor. Si el campo guarda un objeto, impide reemplazar esa referencia después, pero no hace inmutable el contenido del objeto.
+
+### 4. Principios SOLID
+
+**SOLID** reúne cinco principios para organizar el código y facilitar cambios y pruebas. Ayuda a evitar controladores que lo hacen todo, servicios demasiado grandes y dependencias difíciles de sustituir. Son criterios de diseño; no exigen crear una interfaz para cada clase.
+
+#### S — SRP: responsabilidad única
+
+**Una clase debe tener un motivo principal para cambiar.** Separar el cálculo de un impuesto de su impresión permite modificar uno sin tocar el otro.
+
+```csharp
+public class CalculadoraImpuesto
+{
+    public decimal Calcular(decimal importe) => importe * 0.21m;
+}
+
+public class ImpresorImporte
+{
+    public void Imprimir(decimal importe) => System.Console.WriteLine(importe);
+}
+```
+
+#### O — OCP: abierto a extensión, cerrado a modificación
+
+**Añadir comportamientos sin reescribir el código estable que los usa.** Un descuento nuevo implementa el contrato; no necesita añadir otro `if` al cálculo del precio.
+
+```csharp
+public interface IDescuento
+{
+    decimal Aplicar(decimal precio);
+}
+
+public class DescuentoDiezPorCiento : IDescuento
+{
+    public decimal Aplicar(decimal precio) => precio * 0.90m;
+}
+
+public class PrecioFinal
+{
+    public decimal Calcular(decimal precio, IDescuento descuento) =>
+        descuento.Aplicar(precio);
+}
+```
+
+#### L — LSP: sustitución de Liskov
+
+**Un tipo derivado debe poder sustituir al tipo base sin romper su comportamiento esperado.** No debe exigir condiciones adicionales ni dejar de realizar una operación prometida por el contrato.
+
+```csharp
+Notificador canal = new NotificadorSms();
+System.Console.WriteLine(canal.Preparar("Entrega lista"));
+// También funciona si usamos new NotificadorEmail().
+
+public abstract class Notificador
+{
+    public abstract string Preparar(string mensaje);
+}
+
+public class NotificadorSms : Notificador
+{
+    public override string Preparar(string mensaje) => $"SMS: {mensaje}";
+}
+
+public class NotificadorEmail : Notificador
+{
+    public override string Preparar(string mensaje) => $"Email: {mensaje}";
+}
+```
+
+Ambos preparan un mensaje. Una implementación que siempre lance «operación no soportada» rompería esa promesa.
+
+#### I — ISP: segregación de interfaces
+
+**Crear contratos pequeños para no obligar a implementar operaciones innecesarias.** Una impresora sencilla puede imprimir sin tener que implementar un escáner.
+
+```csharp
+public interface IImprimible
+{
+    void Imprimir(string texto);
+}
+
+public interface IEscaneable
+{
+    string Escanear();
+}
+
+public class ImpresoraSimple : IImprimible
+{
+    public void Imprimir(string texto) => System.Console.WriteLine(texto);
+}
+```
+
+#### D — DIP: inversión de dependencias
+
+**La lógica de negocio depende de contratos, y los detalles concretos implementan esos contratos.** Confirmar una compra no necesita saber si el aviso se escribe en consola o se envía por correo.
+
+```csharp
+public interface IAvisos
+{
+    void Enviar(string mensaje);
+}
+
+public class AvisosConsola : IAvisos
+{
+    public void Enviar(string mensaje) => System.Console.WriteLine(mensaje);
+}
+
+public class ConfirmarCompra
+{
+    private readonly IAvisos _avisos;
+
+    public ConfirmarCompra(IAvisos avisos) => _avisos = avisos;
+
+    public void Ejecutar() => _avisos.Enviar("Compra confirmada");
+}
+```
+
+**DIP es el principio; DI es una forma de aplicarlo.** El constructor recibe la dependencia; el contenedor puede elegir la implementación registrada.
+
+Referencias: [Arquitectura por capas](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures), [Principios de arquitectura](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/architectural-principles), [Inyección de dependencias](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection) y [Ciclos de vida](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection/service-lifetimes).
+
+## 6\. 🔗 Datos, Serialización y Funcional
 
 ### Serialización y Deserialización
 
@@ -583,6 +910,216 @@ public class ProductoEntrada
 - `ControllerBase`: clase de ASP.NET Core que aporta herramientas para responder, como `Ok(...)`.
 - `IActionResult`: representa la respuesta HTTP. `Ok(...)` devuelve el código **200** (correcto) y los datos indicados, normalmente como JSON.
 - `[ApiController]`: activa ayudas para APIs; por ejemplo, responde **400** (petición incorrecta) si los datos no superan la validación.
+
+#### Petición POST: headers y body
+
+![Ejemplo de petición POST con headers, body JSON y respuesta HTTP](docs/images/http-post-headers-body.png)
+
+- **Headers (cabeceras):** información sobre el mensaje. `Content-Type` indica el formato enviado; `Accept`, el formato de respuesta que el cliente acepta.
+- **Body (cuerpo):** datos enviados; aquí, el nombre y el precio del producto en JSON.
+- El diagrama muestra una API que crea el producto y responde **201 Created**. El ejemplo C# anterior solo recibe los datos y responde **200 OK**.
+
+#### Usar los headers y el body en un controlador
+
+**Una misma acción puede recibir datos del body y de varios headers.** ASP.NET Core los lee y los entrega como parámetros al método:
+
+| Atributo | Qué lee | Ejemplo |
+|---|---|---|
+| `[FromBody]` | El cuerpo de la petición; convierte el JSON en un objeto C# | `{"a":10,"b":3}` → objeto `Numeros` |
+| `[FromHeader]` | La cabecera cuyo nombre coincide con el parámetro | Parámetro `host` → header `Host` |
+| `[FromHeader(Name = "Content-Length")]` | Una cabecera con el nombre indicado | Header `Content-Length` → parámetro `longitud` |
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/calculos")]
+public class CalculosController : ControllerBase
+{
+    [HttpPost("sumar")]
+    public IActionResult Sumar(
+        [FromBody] Numeros numeros,
+        [FromHeader] string? host,
+        [FromHeader(Name = "Content-Length")] long? longitud)
+    {
+        return Ok(new
+        {
+            Resultado = numeros.A + numeros.B,
+            Host = host,
+            BytesDelBody = longitud
+        });
+    }
+}
+
+public class Numeros
+{
+    public decimal A { get; set; }
+    public decimal B { get; set; }
+}
+```
+
+**Petición de ejemplo:**
+
+```http
+POST /api/calculos/sumar HTTP/1.1
+Host: localhost:5000
+Content-Type: application/json
+Content-Length: 14
+
+{"a":10,"b":3}
+```
+
+- `numeros.A` vale `10`; `numeros.B`, `3`; la suma devuelve `13`.
+- `host` contiene `localhost:5000`: dirección y puerto del servidor al que se envía la petición.
+- `longitud` vale `14`: tamaño del cuerpo en **bytes**, no número de campos JSON. Normalmente lo calcula el cliente HTTP; esta cabecera puede faltar, por eso usamos `long?`.
+- `Name` permite leer cabeceras con guiones o usar un nombre de parámetro distinto. Los nombres de cabecera no distinguen mayúsculas y minúsculas.
+- Usa un solo parámetro `[FromBody]`; agrupa los datos del cuerpo en una clase. Puedes añadir varios parámetros `[FromHeader]`.
+- Con `[ApiController]`, un objeto como `Numeros` normalmente se obtiene del body aunque omitas `[FromBody]`; escribirlo explícitamente deja claro de dónde vienen los datos.
+
+Referencia: [Origen de los parámetros de una acción](https://learn.microsoft.com/aspnet/core/web-api?view=aspnetcore-10.0#binding-source-parameter-inference).
+
+#### Cómo se construye la URL: rutas y nombres C#
+
+**El nombre del método C# no se añade automáticamente a la URL.** En el ejemplo anterior, `Obtener` atiende `GET /api/productos/5`: la dirección sale de `[Route("api/productos")]` + `[HttpGet("{id}")]`. Puedes renombrarlo y esa ruta seguirá igual.
+
+Los **tokens** son marcadores que ASP.NET Core sustituye al preparar las rutas. Ahorran escribir nombres repetidos:
+
+| Marcador | Se sustituye por | Ejemplo |
+|---|---|---|
+| `[controller]` | Nombre del controlador sin el sufijo `Controller` | `ProductosController` → `Productos` |
+| `[action]` | Nombre de la acción; normalmente, el nombre del método | `Obtener(int id)` → `Obtener` |
+| `{id}` | Valor que llega en la URL de cada petición | `/5` → `id = 5` |
+
+**Ejemplo con ambos tokens:**
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/[controller]/[action]")]
+public class ProductosController : ControllerBase
+{
+    [HttpGet("{id}")]
+    public IActionResult Obtener(int id) => Ok(new { Id = id });
+}
+```
+
+La ruta queda `GET /api/Productos/Obtener/5`. Aquí `Obtener` aparece porque hemos incluido `[action]`.
+
+| Ruta base del controlador | Atributo de `Obtener(int id)` | Endpoint resultante |
+|---|---|---|
+| `[Route("api/productos")]` | `[HttpGet("{id}")]` | `GET /api/productos/5` |
+| `[Route("api/[controller]")]` | `[HttpGet("{id}")]` | `GET /api/Productos/5` |
+| `[Route("api/[controller]/[action]")]` | `[HttpGet("{id}")]` | `GET /api/Productos/Obtener/5` |
+
+- **Ventaja:** menos nombres repetidos y un formato común para varios controladores.
+- **Consecuencia:** renombrar el controlador o la acción puede cambiar la URL cuando usas su token. Las rutas escritas explícitamente permiten mantener una URL estable aunque cambien los nombres C#.
+
+Referencia: [Enrutamiento y sustitución de tokens](https://learn.microsoft.com/aspnet/core/mvc/controllers/routing?view=aspnetcore-10.0#token-replacement-in-route-templates-controller-action-area).
+
+#### GET por identificador: buscar y devolver un objeto
+
+Dentro de un controlador con `[Route("api/personas")]`, esta acción atiende `GET /api/personas/5`:
+
+```csharp
+[HttpGet("{id}")]
+public People Get(int id) => Repository.People.First(p => p.Id == id);
+```
+
+Se presupone que `People` es la clase de persona y `Repository.People` contiene la lista de personas.
+
+- `{id}` recibe el valor de la URL: `/5` → `id = 5`.
+- `Get` es el nombre interno del método; no añade `/Get` a esta ruta.
+- El primer `=>` abrevia el cuerpo del método: equivale a `{ return ...; }`.
+- `First(...)` es una operación de LINQ: busca y devuelve la primera persona que cumple la condición.
+- `p => p.Id == id` significa «para cada persona `p`, comprobar si su identificador coincide con el recibido».
+- El objeto devuelto se convierte normalmente en JSON; el cliente no necesita conocer la clase C# `People`.
+
+**Si no encuentra la persona, `First` lanza una excepción.** Para responder **404 Not Found** (no encontrado), usa `FirstOrDefault` y comprueba el resultado:
+
+```csharp
+[HttpGet("{id}")]
+public ActionResult<People> Get(int id)
+{
+    var persona = Repository.People.FirstOrDefault(p => p.Id == id);
+    if (persona is null)
+        return NotFound(); // HTTP 404
+
+    return Ok(persona);    // HTTP 200 + datos de la persona
+}
+```
+
+#### `ActionResult<T>`: devolver datos o un estado HTTP
+
+**`ActionResult<People>` permite que el mismo método devuelva una persona cuando la encuentra o una respuesta de error cuando no existe.** `People`, entre `< >`, indica el tipo de datos esperado.
+
+En el ejemplo anterior:
+
+```text
+GET /api/personas/5
+    → FirstOrDefault busca la persona
+    → No existe: return NotFound() → HTTP 404
+    → Existe:    return Ok(persona) → HTTP 200 + persona en JSON
+```
+
+- `return` termina la ejecución del método y entrega su resultado. Si devuelve `NotFound()`, ya no llega a `Ok(persona)`.
+- `Ok(persona)` prepara una respuesta correcta con los datos; ASP.NET Core los convierte normalmente en JSON.
+- `NotFound()` prepara una respuesta de recurso no encontrado; no devuelve un objeto `People`.
+
+| Tipo de retorno | Qué permite devolver | Uso habitual |
+|---|---|---|
+| `People` | Un objeto de ese tipo | Devolver datos directamente |
+| `IActionResult` | Respuestas HTTP como `Ok(...)` o `NotFound()` | Elegir el estado y contenido de la respuesta |
+| `ActionResult<People>` | Un objeto `People` o una respuesta HTTP | Declarar los datos esperados y responder con distintos estados |
+
+**Nombres parecidos:** una *acción* es el método del controlador; `ActionResult<T>` representa su resultado; `Action<T>` es un delegado de C# para ejecutar una función que no devuelve valor.
+
+#### `IActionResult`: elegir la respuesta del controlador
+
+**`IActionResult` es una interfaz que representa el resultado de una acción.** Permite devolver respuestas distintas según lo que ocurra: datos, errores o una respuesta sin contenido. ASP.NET Core usa ese resultado para enviar la respuesta HTTP.
+
+**Analogía:** es el sobre de la respuesta. Puede llevar un estado («correcto», «petición incorrecta»…) y contenido, como un objeto JSON.
+
+**Ejemplo: consultar si hay sitio para una reserva.** Para simplificar, suponemos que quedan cuatro plazas.
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/reservas")]
+public class ReservasController : ControllerBase
+{
+    [HttpGet("disponibilidad/{personas:int}")]
+    public IActionResult ConsultarDisponibilidad(int personas)
+    {
+        if (personas < 1)
+            return BadRequest("Indica al menos una persona.");
+
+        return Ok(new
+        {
+            Personas = personas,
+            Disponible = personas <= 4
+        });
+    }
+}
+```
+
+| Petición | Respuesta |
+|---|---|
+| `GET /api/reservas/disponibilidad/0` | **400**: cantidad incorrecta |
+| `GET /api/reservas/disponibilidad/2` | **200**: `{"personas":2,"disponible":true}` |
+| `GET /api/reservas/disponibilidad/6` | **200**: `{"personas":6,"disponible":false}` |
+
+No tener plazas sigue siendo una consulta correcta: devuelve **200** con `disponible: false`.
+
+| Respuesta C# | Código HTTP | Significado |
+|---|---|---|
+| `Ok(datos)` | 200 | Petición correcta; devuelve datos |
+| `BadRequest(mensaje)` | 400 | Datos de la petición incorrectos |
+| `NotFound()` | 404 | Recurso no encontrado |
+| `NoContent()` | 204 | Petición correcta; sin cuerpo de respuesta |
+
+`IActionResult` permite elegir estas respuestas sin declarar el tipo concreto de los datos. Si quieres indicar también ese tipo, usa `ActionResult<T>`; por ejemplo, `ActionResult<DisponibilidadReserva>`.
 
 Para activar los controladores, añade en `Program.cs`:
 
@@ -684,7 +1221,7 @@ Func<string, string> aMayusculas = (texto) => texto.ToUpper();
 Action<string> logger = (msg) => Console.WriteLine($"LOG: {msg}");
 ```
 
-## 6\. 🔍 Generics y Colecciones
+## 7\. 🔍 Generics y Colecciones
 
 Los **Genéricos (`<T>`)** nos permiten escribir código reutilizable y seguro sin especificar el tipo de dato exacto hasta el momento de usarlo.
 
@@ -701,7 +1238,7 @@ public T DevolverElemento<T>(T elemento)
 }
 ```
 
-## 7\. 📊 LINQ (Language Integrated Query)
+## 8\. 📊 LINQ (Language Integrated Query)
 
 La herramienta más potente de .NET para manipular datos (Arrays, Listas, Bases de Datos).
 
@@ -725,7 +1262,7 @@ var query = from n in numeros
             select n;
 ```
 
-## 8\. 🌐 Instalación y verificación de IIS (Internet Information Services)
+## 9\. 🌐 Instalación y verificación de IIS (Internet Information Services)
 
 IIS es el servidor web de Microsoft integrado en Windows. Para utilizarlo, primero hay que habilitarlo como una característica del sistema operativo.
 
