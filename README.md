@@ -22,6 +22,33 @@
 
 > **Respuesta de entrevista:** .NET Framework 4.8.1 es la línea antigua para Windows. .NET 6, 8 y 10 pertenecen a la línea moderna, que funciona en varios sistemas operativos y recibe mejoras por versión. La diferencia principal entre 6, 8 y 10 es su fecha, las funciones incorporadas y el plazo de soporte; hoy elegiría .NET 10 para un proyecto nuevo y actualizaría .NET 6 u 8 porque su soporte ya terminó o está por terminar.
 
+### ASP.NET y ASP.NET Core: la parte web de .NET
+
+**ASP.NET** es el conjunto de herramientas de .NET para crear páginas web y APIs. Una **API web** permite que una aplicación pida o envíe datos a un servidor; por ejemplo, consultar productos desde una app móvil.
+
+- **C#** es el lenguaje con el que escribes el código.
+- **.NET** es la plataforma que permite ejecutarlo.
+- **ASP.NET** aporta lo necesario para recibir peticiones web y responderlas.
+
+| Familia | Se ejecuta sobre | Sistemas | Uso |
+|---|---|---|---|
+| **ASP.NET clásico (4.x)** | .NET Framework | Windows | Aplicaciones existentes con Web Forms, MVC o Web API |
+| **ASP.NET Core 1–3.1** | Principalmente .NET Core | Windows, Linux, macOS | Primeras versiones de la línea moderna |
+| **ASP.NET Core 5, 6, 8, 10…** | .NET moderno de la misma versión | Windows, Linux, macOS | Nuevas aplicaciones web y APIs |
+
+**ASP.NET Core conserva «Core» en su nombre**, aunque .NET dejó de llamarse «.NET Core» desde la versión 5. Ejemplo: .NET 10 + ASP.NET Core 10.
+
+Los nombres siguientes son formas de construir aplicaciones, no versiones consecutivas:
+
+- **Web Forms:** páginas con controles y eventos; pertenece a ASP.NET clásico.
+- **MVC (Modelo–Vista–Controlador):** separa los datos, la página que ve el usuario y el código que atiende la petición. Existe en ambas familias.
+- **ASP.NET Web API:** herramienta del ASP.NET clásico para devolver datos, normalmente JSON.
+- **APIs en ASP.NET Core:** pueden usar controladores o **Minimal APIs**, que definen las rutas directamente con menos código.
+- **Razor Pages:** organiza una web por páginas y su código asociado; pertenece a ASP.NET Core.
+- **Blazor:** permite crear interfaces web interactivas con C# y componentes.
+
+Referencias: [ASP.NET clásico](https://learn.microsoft.com/aspnet/overview) y [ASP.NET Core](https://learn.microsoft.com/aspnet/core/overview?view=aspnetcore-10.0).
+
 ## 2\. 🛠️ Configuración y Entorno
 
 Para empezar a trabajar con el ecosistema moderno de Microsoft.
@@ -496,17 +523,31 @@ string json = System.Text.Json.JsonSerializer.Serialize(producto);
 
 ### Controladores, endpoints y métodos HTTP
 
-- **Controlador:** clase que recibe peticiones HTTP, ejecuta la lógica correspondiente y devuelve respuestas. En ASP.NET Core suele heredar de `ControllerBase`.
-- **Endpoint:** una dirección y un método HTTP asociados a una acción. Ejemplo: `GET /api/productos/5`.
-- Los atributos `[HttpGet]`, `[HttpPost]`, `[HttpPut]`, `[HttpPatch]` y `[HttpDelete]` indican qué método HTTP atiende cada acción.
+- **HTTP:** reglas que usan el navegador o una app para comunicarse con un servidor. Envías una petición y recibes una respuesta.
+- **Controlador:** clase que agrupa las operaciones de una parte de la API. Por ejemplo, `ProductosController` atiende consultas y altas de productos. Es como una recepción: recibe la petición, pide el trabajo a los servicios necesarios y entrega la respuesta.
+- **Acción:** método del controlador que atiende una petición. Por ejemplo, `Obtener`.
+- **Endpoint:** punto de entrada a una operación de la API. Se identifica por el método HTTP y la ruta: `GET /api/productos/5`.
 
-| Método | Uso habitual | Ejemplo |
-|---|---|---|
-| `GET` | Consultar datos | `GET /api/productos/5` |
-| `POST` | Crear un recurso | `POST /api/productos` |
-| `PUT` | Reemplazar un recurso | `PUT /api/productos/5` |
-| `PATCH` | Cambiar parte de un recurso | `PATCH /api/productos/5` |
-| `DELETE` | Eliminar un recurso | `DELETE /api/productos/5` |
+```text
+La app pide: GET /api/productos/5
+    → ASP.NET Core encuentra la ruta y el método HTTP
+    → llama a Obtener(5) en ProductosController
+    → el controlador devuelve una respuesta a la app
+```
+
+El **método HTTP** indica qué operación solicita el cliente. La **ruta** indica sobre qué datos:
+
+| Método HTTP | Atributo en C# | Uso habitual | Ejemplo |
+|---|---|---|---|
+| `GET` | `[HttpGet]` | Consultar productos | `GET /api/productos` |
+| `POST` | `[HttpPost]` | Enviar un producto para crearlo | `POST /api/productos` |
+| `PUT` | `[HttpPut]` | Sustituir los datos de un producto | `PUT /api/productos/5` |
+| `PATCH` | `[HttpPatch]` | Cambiar solo algunos datos | `PATCH /api/productos/5` |
+| `DELETE` | `[HttpDelete]` | Eliminar un producto | `DELETE /api/productos/5` |
+
+`GET /api/productos` y `POST /api/productos` son endpoints diferentes, aunque compartan la ruta. Estos atributos seleccionan el método que se ejecuta; el código de ese método realiza la operación.
+
+**Ejemplo de controlador:** devuelve datos de muestra y recibe un producto, sin guardarlo en una base de datos.
 
 ```csharp
 using Microsoft.AspNetCore.Mvc;
@@ -515,20 +556,43 @@ using Microsoft.AspNetCore.Mvc;
 [Route("api/productos")]
 public class ProductosController : ControllerBase
 {
-    [HttpGet("{id:int}")]
-    public IActionResult Obtener(int id) => Ok($"Producto {id}");
+    [HttpGet("{id}")] // GET /api/productos/5
+    public IActionResult Obtener(int id)
+    {
+        return Ok(new { Id = id, Nombre = "Teclado" });
+    }
 
-    [HttpPost]
-    public IActionResult Crear([FromBody] CrearProducto producto) =>
-        CreatedAtAction(nameof(Obtener), new { id = 1 }, producto); // HTTP 201
+    [HttpPost] // POST /api/productos
+    public IActionResult Recibir([FromBody] ProductoEntrada producto)
+    {
+        return Ok(new { Recibido = producto.Nombre });
+    }
 }
 
-public record CrearProducto(string Nombre);
+public class ProductoEntrada
+{
+    public string Nombre { get; set; } = "";
+}
 ```
 
-- `[Route]` define la ruta base; `"{id:int}"` recibe un entero de la URL.
-- `[FromBody]` lee el objeto enviado en el cuerpo de la petición, normalmente en JSON.
-- `[ApiController]` activa convenciones útiles para APIs, como validar automáticamente el modelo y responder con `400 Bad Request` si no es válido.
+- `[Route("api/productos")]`: parte común de las direcciones del controlador.
+- `[HttpGet("{id}")]`: añade el identificador a esa ruta; el `5` de la URL llega al parámetro `id`.
+- `[FromBody]`: convierte el JSON enviado en el cuerpo de la petición en un objeto C#. Aquí puedes enviar `{"nombre":"Ratón"}`.
+- `ControllerBase`: clase de ASP.NET Core que aporta herramientas para responder, como `Ok(...)`.
+- `IActionResult`: representa la respuesta HTTP. `Ok(...)` devuelve el código **200** (correcto) y los datos indicados, normalmente como JSON.
+- `[ApiController]`: activa ayudas para APIs; por ejemplo, responde **400** (petición incorrecta) si los datos no superan la validación.
+
+Para activar los controladores, añade en `Program.cs`:
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+var app = builder.Build();
+app.MapControllers();
+app.Run();
+```
+
+Referencia: [APIs con controladores en ASP.NET Core](https://learn.microsoft.com/aspnet/core/web-api?view=aspnetcore-10.0).
 
 ### Swagger y OpenAPI
 
