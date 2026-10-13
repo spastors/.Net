@@ -11,14 +11,16 @@
 - **.NET Core (2016–2019):** rediseño abierto y multiplataforma. Versiones 1.0–3.1.
 - **.NET (desde 2020):** continuación unificada de .NET Core. Para proyectos nuevos, es la opción habitual.
 
-| Línea | Sistemas | Uso típico |
-|---|---|---|
-| .NET Framework 4.8.1 | Windows | Mantener aplicaciones existentes, ASP.NET clásico, Web Forms, WCF |
-| .NET 10 LTS (Long Term Support) | Windows, Linux, macOS | Nuevas APIs, servicios, apps de consola y escritorio compatible |
+| Versión | Dónde funciona | Qué la caracteriza | Soporte a octubre de 2026 / uso recomendado |
+|---|---|---|---|
+| **.NET Framework 4.8.1** | Windows | Plataforma original; usada por aplicaciones Windows, ASP.NET clásico y Web Forms. | Se mantiene según la versión de Windows. Elegirla para mantener sistemas existentes o dependencias que la requieran. |
+| **.NET 6** | Windows, Linux, macOS | Consolidó la plataforma multiplataforma e introdujo mejoras como Minimal APIs y Hot Reload. | Soporte terminado en noviembre de 2024. Migrar a una versión con soporte. |
+| **.NET 8** | Windows, Linux, macOS | Mejoras de rendimiento y publicación; incorporó C# 12. | LTS hasta el 10-11-2026. Muy presente en proyectos actuales; planificar actualización. |
+| **.NET 10** | Windows, Linux, macOS | Versión moderna más reciente de esta tabla; continúa las mejoras de rendimiento y herramientas; usa C# 14. | LTS hasta el 14-11-2028. Recomendado para proyectos nuevos. |
 
-**Versiones y soporte (octubre de 2026):** .NET 10 es una versión de soporte largo (**LTS**, 3 años), hasta el 14-11-2028. .NET 9 es de soporte estándar (**STS**, 2 años) y termina el 10-11-2026. .NET Framework 4.8.1 se mantiene según el ciclo de vida de Windows donde está instalado. Consulta la [política de soporte de .NET](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) y el [ciclo de vida de .NET Framework](https://learn.microsoft.com/lifecycle/products/microsoft-net-framework).
+**LTS** significa soporte largo: 3 años de actualizaciones. **STS** significa soporte estándar: 2 años. Las versiones 6, 8 y 10 son LTS; el estado y las fechas cambian según la versión. Consulta la [política oficial de soporte de .NET](https://dotnet.microsoft.com/es-es/platform/support/policy/dotnet-core), las novedades de [.NET 6](https://learn.microsoft.com/es-es/dotnet/core/whats-new/dotnet-6), [.NET 8](https://learn.microsoft.com/es-es/dotnet/core/whats-new/dotnet-8/) y [.NET 10](https://learn.microsoft.com/es-es/dotnet/core/whats-new/dotnet-10), y el [ciclo de vida de .NET Framework](https://learn.microsoft.com/lifecycle/products/microsoft-net-framework).
 
-> **Regla rápida:** Framework = legado Windows; .NET moderno = multiplataforma y recomendado para desarrollo nuevo.
+> **Respuesta de entrevista:** .NET Framework 4.8.1 es la línea antigua para Windows. .NET 6, 8 y 10 pertenecen a la línea moderna, que funciona en varios sistemas operativos y recibe mejoras por versión. La diferencia principal entre 6, 8 y 10 es su fecha, las funciones incorporadas y el plazo de soporte; hoy elegiría .NET 10 para un proyecto nuevo y actualizaría .NET 6 u 8 porque su soporte ya terminó o está por terminar.
 
 ## 2\. 🛠️ Configuración y Entorno
 
@@ -491,6 +493,52 @@ var producto = new Producto("Teclado");
 string json = System.Text.Json.JsonSerializer.Serialize(producto);
 // Output: {"Nombre":"Teclado"}
 ```
+
+### Controladores, endpoints y métodos HTTP
+
+- **Controlador:** clase que recibe peticiones HTTP, ejecuta la lógica correspondiente y devuelve respuestas. En ASP.NET Core suele heredar de `ControllerBase`.
+- **Endpoint:** una dirección y un método HTTP asociados a una acción. Ejemplo: `GET /api/productos/5`.
+- Los atributos `[HttpGet]`, `[HttpPost]`, `[HttpPut]`, `[HttpPatch]` y `[HttpDelete]` indican qué método HTTP atiende cada acción.
+
+| Método | Uso habitual | Ejemplo |
+|---|---|---|
+| `GET` | Consultar datos | `GET /api/productos/5` |
+| `POST` | Crear un recurso | `POST /api/productos` |
+| `PUT` | Reemplazar un recurso | `PUT /api/productos/5` |
+| `PATCH` | Cambiar parte de un recurso | `PATCH /api/productos/5` |
+| `DELETE` | Eliminar un recurso | `DELETE /api/productos/5` |
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/productos")]
+public class ProductosController : ControllerBase
+{
+    [HttpGet("{id:int}")]
+    public IActionResult Obtener(int id) => Ok($"Producto {id}");
+
+    [HttpPost]
+    public IActionResult Crear([FromBody] CrearProducto producto) =>
+        CreatedAtAction(nameof(Obtener), new { id = 1 }, producto); // HTTP 201
+}
+
+public record CrearProducto(string Nombre);
+```
+
+- `[Route]` define la ruta base; `"{id:int}"` recibe un entero de la URL.
+- `[FromBody]` lee el objeto enviado en el cuerpo de la petición, normalmente en JSON.
+- `[ApiController]` activa convenciones útiles para APIs, como validar automáticamente el modelo y responder con `400 Bad Request` si no es válido.
+
+### Swagger y OpenAPI
+
+- **OpenAPI** es un formato estándar para describir una API: rutas, métodos (`GET`, `POST`), parámetros y respuestas. Suele publicarse como un archivo JSON.
+- **Swagger** es el nombre de un conjunto de herramientas que usan esa descripción. **Swagger UI** la muestra como una página web y permite probar los endpoints desde el navegador.
+- Flujo: API ASP.NET Core → documento OpenAPI → Swagger UI → explorar y enviar peticiones.
+- En .NET 9 y posteriores, ASP.NET Core puede generar el documento OpenAPI integrado; para la página interactiva se añade una herramienta como Swagger UI. En .NET 6 y 8 es común encontrar Swashbuckle en las plantillas o proyectos existentes.
+- Habilita la interfaz solo en desarrollo, salvo que el acceso esté protegido: puede revelar rutas y detalles de la API.
+
+> **En una frase:** OpenAPI describe la API; Swagger UI convierte esa descripción en documentación interactiva para verla y probarla. [Documentación ASP.NET Core](https://learn.microsoft.com/es-es/aspnet/core/tutorials/web-api-help-pages-using-swagger?view=aspnetcore-10.0).
 
 ### 🚀 Funciones de Primera Clase y Delegados (Callbacks)
 
