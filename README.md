@@ -186,26 +186,14 @@ int segura = longitud ?? 0;
 
 `?` no añade una comprobación automática en ejecución para referencias: el compilador analiza nulabilidad y emite advertencias.
 
-### 💾 Tipos de Valor vs Tipos de Referencia 
+### 💾 Tipos de Valor vs Tipos de Referencia
 
-Esta es una de las cosas que más confunden cuando empiezas con C#. La idea clave es esta:
-
-> **Cuando copias una variable… ¿se copia el contenido completo o solo el “acceso” a ese contenido?**
-
-Vamos a verlo con una analogía muy simple.
-
+**Al asignar una variable a otra, se copia el valor o la referencia al objeto.** Esa diferencia determina si las dos variables comparten datos.
 
 #### 1️⃣ Tipos de Valor → *Como una fotocopia en papel* 🧾
 
 Un **tipo de valor guarda directamente el dato**.
 Cuando asignas una variable a otra, se hace una **copia independiente**.
-
-| Concepto | Explicación Simple | Analogía |
-| :--- | :--- | :--- |
-| **¿Qué guardan?** | Guardan **el dato directamente** (por ejemplo el número `10` o el valor `true`). | Una **fotografía en papel**. |
-| **¿Dónde viven?** | Depende del contexto: pueden estar dentro de otro objeto o en la pila de llamadas (memoria temporal de los métodos activos). | Como una hoja guardada dentro de una carpeta o sobre el escritorio: depende de dónde esté el contenedor. |
-| **Al copiar...** | Se crea una **copia nueva e independiente** del dato. | Haces **otra foto igual**, pero es una hoja distinta. |
-| **Ejemplos** | Tipos simples como `int`, `bool`, `decimal` y estructuras (`struct`). | |
 
 ##### 🧠 Analogía
 
@@ -229,25 +217,9 @@ Console.WriteLine(vidasJugador1); // 3 ✅ No cambia
 Console.WriteLine(vidasJugador2); // 1
 ```
 
-Aunque partían del mismo número, ahora cada variable tiene su propio valor.
-
-
 #### 2️⃣ Tipos de Referencia → *Como un documento compartido en Google Drive* 🔗
 
 Un **tipo de referencia no guarda el objeto en sí**, guarda una **referencia (dirección)** hacia ese objeto.
-
-| Concepto | Explicación Simple | Analogía |
-| :--- | :--- | :--- |
-| **¿Qué guardan?** | Guardan una **referencia (dirección)** que apunta a un objeto. | Un **enlace a un archivo compartido**. |
-| **¿Dónde viven?** | Normalmente, los objetos creados con `new` se guardan en el **heap** (zona donde .NET guarda y administra objetos). | Como un documento en un archivador; la variable conserva el acceso para encontrarlo. |
-| **Al copiar...** | Se copia **la referencia**, no el objeto. Ambas variables apuntan al mismo. | Dos personas abren **el mismo archivo**. |
-| **Ejemplos** | Clases (`class`), arrays, listas (`List<T>`), diccionarios, etc. | |
-
-Cuando copias una variable:
-
-* **No se crea una copia del objeto**
-* Ambas variables apuntan **al mismo objeto**
-* Si una lo modifica, **la otra ve el cambio**
 
 ##### 🧠 Analogía
 
@@ -276,22 +248,16 @@ Console.WriteLine(cuenta1.Saldo); // 500 ✅ ¡Cambia también!
 Console.WriteLine(cuenta2.Saldo); // 500
 ```
 
-Aquí **no hay dos cuentas**, hay **una sola compartida por dos variables**.
+#### 📊 Comparativa
 
-
-#### 📝 La diferencia en una frase
-
-* ✅ **Tipos de Valor:** cada variable tiene su propio dato
-* ⚠️ **Tipos de Referencia:** varias variables comparten el mismo objeto
-
-
-#### 📊 Resumen 
-
-| Tipo           | ¿Qué se copia? | ¿Afecta al original? | Ejemplos                           |
-| -------------- | -------------- | -------------------- | ---------------------------------- |
-| **Valor**      | El dato        | ❌ No                 | `int`, `bool`, `decimal`, `struct` |
-| **Referencia** | La dirección   | ✅ Sí                 | `class`, `array`, `List<T>`        |
-
+| Concepto | Tipo de valor | Tipo de referencia |
+|---|---|---|
+| ¿Qué guarda la variable? | El dato directamente | Una referencia al objeto |
+| Al asignar a otra variable | Copia el valor | Copia la referencia; ambas apuntan al mismo objeto |
+| Al modificar la copia | Cambiar un valor simple, como `int`, no modifica el original | Modificar el objeto compartido se ve desde ambas variables |
+| ¿Dónde viven? | Depende del contexto: dentro de otro objeto o en la pila de llamadas (memoria temporal de los métodos activos) | Normalmente, el objeto está en el heap (zona donde .NET guarda y administra objetos) |
+| Analogía de ubicación | Una hoja dentro de una carpeta o sobre el escritorio: depende del contenedor | Un documento en un archivador; la variable conserva cómo encontrarlo |
+| Ejemplos | `int`, `bool`, `decimal`, `struct` | `class`, arrays, `List<T>` |
 
 ## 4\. 🧬 Programación Orientada a Objetos (POO)
 
@@ -350,12 +316,10 @@ lapiz.AñadirStock(10);
 
 **Para acceder a un miembro `static`, no necesitas crear una instancia de la clase con `new`.** Una instancia es un objeto creado a partir de una clase. Por ejemplo, puedes leer `Empleado.Empresa` directamente, sin crear antes un empleado.
 
-`static` puede aplicarse a campos, propiedades y métodos. Indica que pertenecen a la clase: los datos son comunes y los métodos se llaman usando su nombre.
+`static` puede aplicarse a campos, propiedades y métodos. Los campos y propiedades pertenecen a la clase y se comparten; los métodos se llaman usando el nombre de la clase.
 
 - **Datos compartidos:** información común a todos los objetos, como el nombre de la empresa.
 - **Funciones de utilidad:** operaciones que reciben datos y devuelven un resultado sin necesitar un objeto concreto, como convertir minutos en segundos.
-
-**Sin `static`, el dato pertenece a cada objeto. Con `static`, pertenece a la clase y se comparte.**
 
 **Ejemplo: los empleados de un cine.** Cada empleado tiene su nombre, pero todos trabajan para la misma empresa.
 
@@ -750,7 +714,7 @@ public class ProductoEntrada
 - `[HttpGet("{id}")]`: añade el identificador a esa ruta; el `5` de la URL llega al parámetro `id`.
 - `[FromBody]`: convierte el JSON enviado en el cuerpo de la petición en un objeto C#. Aquí puedes enviar `{"nombre":"Ratón"}`.
 - `ControllerBase`: clase de ASP.NET Core que aporta herramientas para responder, como `Ok(...)`.
-- `IActionResult`: representa la respuesta HTTP. `Ok(...)` devuelve el código **200** (correcto) y los datos indicados, normalmente como JSON.
+- `IActionResult`: representa la respuesta HTTP; se detalla en [Respuestas del controlador](#respuestas-del-controlador-iactionresult-y-actionresultt).
 - `[ApiController]`: activa ayudas para APIs; por ejemplo, responde **400** (petición incorrecta) si los datos no superan la validación.
 
 Para activar los controladores, añade en `Program.cs`:
@@ -896,10 +860,8 @@ Dentro de un controlador con `[Route("api/personas")]`, esta acción atiende `GE
 public People Get(int id) => Repository.People.First(p => p.Id == id);
 ```
 
-Se presupone que `People` es la clase de persona y `Repository.People` contiene la lista de personas.
+Se presupone que `People` es la clase de persona y `Repository.People` contiene la lista de personas. La composición de esta URL se explica en [Cómo se construye la URL](#cómo-se-construye-la-url-rutas-y-nombres-c).
 
-- `{id}` recibe el valor de la URL: `/5` → `id = 5`.
-- `Get` es el nombre interno del método; no añade `/Get` a esta ruta.
 - El primer `=>` abrevia el cuerpo del método: equivale a `{ return ...; }`.
 - `First(...)` es una operación de LINQ: busca y devuelve la primera persona que cumple la condición.
 - `p => p.Id == id` significa «para cada persona `p`, comprobar si su identificador coincide con el recibido».
@@ -919,11 +881,19 @@ public ActionResult<People> Get(int id)
 }
 ```
 
-#### `ActionResult<T>`: devolver datos o un estado HTTP
+### Respuestas del controlador: `IActionResult` y `ActionResult<T>`
 
-**`ActionResult<People>` permite que el mismo método devuelva una persona cuando la encuentra o una respuesta de error cuando no existe.** `People`, entre `< >`, indica el tipo de datos esperado.
+**`IActionResult` representa una respuesta HTTP. `ActionResult<T>` permite además indicar el tipo de datos esperado**, como una persona. ASP.NET Core envía el estado y convierte los datos normalmente en JSON.
 
-En el ejemplo anterior:
+**Analogía:** es el sobre de la respuesta. Puede llevar un estado («correcto», «petición incorrecta»…) y contenido.
+
+| Tipo de retorno | Qué permite devolver | Uso habitual |
+|---|---|---|
+| `People` | Un objeto de ese tipo | Devolver datos directamente |
+| `IActionResult` | Respuestas HTTP como `Ok(...)` o `NotFound()` | Elegir el estado y contenido de la respuesta |
+| `ActionResult<People>` | Un objeto `People` o una respuesta HTTP | Declarar los datos esperados y responder con distintos estados |
+
+En `ActionResult<People>`, `People` es el tipo indicado entre `< >`. El GET anterior utiliza esa opción:
 
 ```text
 GET /api/personas/5
@@ -932,25 +902,18 @@ GET /api/personas/5
     → Existe:    return Ok(persona) → HTTP 200 + persona en JSON
 ```
 
-- `return` termina la ejecución del método y entrega su resultado. Si devuelve `NotFound()`, ya no llega a `Ok(persona)`.
-- `Ok(persona)` prepara una respuesta correcta con los datos; ASP.NET Core los convierte normalmente en JSON.
-- `NotFound()` prepara una respuesta de recurso no encontrado; no devuelve un objeto `People`.
+`return` termina la ejecución del método. Si devuelve `NotFound()`, ya no llega a `Ok(persona)`.
 
-| Tipo de retorno | Qué permite devolver | Uso habitual |
+| Respuesta C# | Código HTTP | Significado |
 |---|---|---|
-| `People` | Un objeto de ese tipo | Devolver datos directamente |
-| `IActionResult` | Respuestas HTTP como `Ok(...)` o `NotFound()` | Elegir el estado y contenido de la respuesta |
-| `ActionResult<People>` | Un objeto `People` o una respuesta HTTP | Declarar los datos esperados y responder con distintos estados |
+| `Ok(datos)` | 200 | Petición correcta; devuelve datos |
+| `BadRequest(mensaje)` | 400 | Datos de la petición incorrectos |
+| `NotFound()` | 404 | Recurso no encontrado |
+| `NoContent()` | 204 | Petición correcta; sin cuerpo de respuesta |
 
-**Nombres parecidos:** una *acción* es el método del controlador; `ActionResult<T>` representa su resultado; `Action<T>` es un delegado de C# para ejecutar una función que no devuelve valor.
+#### Ejemplo con `IActionResult`: disponibilidad de una reserva
 
-#### `IActionResult`: elegir la respuesta del controlador
-
-**`IActionResult` es una interfaz que representa el resultado de una acción.** Permite devolver respuestas distintas según lo que ocurra: datos, errores o una respuesta sin contenido. ASP.NET Core usa ese resultado para enviar la respuesta HTTP.
-
-**Analogía:** es el sobre de la respuesta. Puede llevar un estado («correcto», «petición incorrecta»…) y contenido, como un objeto JSON.
-
-**Ejemplo: consultar si hay sitio para una reserva.** Para simplificar, suponemos que quedan cuatro plazas.
+Suponemos que quedan cuatro plazas. El método puede responder con un error de entrada o con los datos de disponibilidad:
 
 ```csharp
 using Microsoft.AspNetCore.Mvc;
@@ -982,14 +945,7 @@ public class ReservasController : ControllerBase
 
 No tener plazas sigue siendo una consulta correcta: devuelve **200** con `disponible: false`.
 
-| Respuesta C# | Código HTTP | Significado |
-|---|---|---|
-| `Ok(datos)` | 200 | Petición correcta; devuelve datos |
-| `BadRequest(mensaje)` | 400 | Datos de la petición incorrectos |
-| `NotFound()` | 404 | Recurso no encontrado |
-| `NoContent()` | 204 | Petición correcta; sin cuerpo de respuesta |
-
-`IActionResult` permite elegir estas respuestas sin declarar el tipo concreto de los datos. Si quieres indicar también ese tipo, usa `ActionResult<T>`; por ejemplo, `ActionResult<DisponibilidadReserva>`.
+**Nombres parecidos:** una *acción* es el método del controlador; `ActionResult<T>` representa su resultado; `Action<T>` es un delegado de C# para ejecutar una función que no devuelve valor.
 
 ### Swagger y OpenAPI
 
@@ -1100,22 +1056,13 @@ public class EntradasController : ControllerBase
 
 El **contenedor DI** de ASP.NET Core. Es un registro de servicios: le decimos qué clase debe utilizar cuando alguien pida una dependencia.
 
-En `Program.cs`:
+En el `Program.cs` mostrado en Web API, añade esta línea junto a `AddControllers()`, antes de `builder.Build()`:
 
 ```csharp
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllers();
 builder.Services.AddScoped<IEntradaService, EntradaService>();
-
-var app = builder.Build();
-app.MapControllers();
-app.Run();
 ```
 
-La línea `AddScoped<IEntradaService, EntradaService>()` significa: **«Cuando pidan IEntradaService, entrega un EntradaService y reutilízalo dentro de esa petición».**
-
-Al crear `EntradasController`, ASP.NET Core ve su constructor, obtiene el servicio y se lo entrega.
+Así asociamos el contrato `IEntradaService` con la clase `EntradaService`. Al crear `EntradasController`, ASP.NET Core ve su constructor, obtiene el servicio y se lo entrega. Cuándo se crea y reutiliza se explica en **Ciclos de vida**.
 
 **¿Para qué sirve?**
 
@@ -1137,13 +1084,15 @@ Los tres registros hacen funcionar la inyección. Cambia **cuándo se crea un ob
 
 **Una instancia** es un objeto creado a partir de una clase. Un **scope** es un grupo que comparte sus servicios; en una API, normalmente corresponde a una petición HTTP.
 
-Para nuestro servicio de entradas, usaremos **Scoped**:
+El ejemplo de entradas ya está registrado como **Scoped**. Para cambiar su ciclo de vida, sustituye ese registro por una de estas alternativas:
 
 ```csharp
 builder.Services.AddScoped<IEntradaService, EntradaService>();
 
-// Alternativas: sustituir la línea anterior por UNA de estas.
+// Opción Transient:
 // builder.Services.AddTransient<IEntradaService, EntradaService>();
+
+// Opción Singleton:
 // builder.Services.AddSingleton<IEntradaService, EntradaService>();
 ```
 
