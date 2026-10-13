@@ -186,7 +186,7 @@ int segura = longitud ?? 0;
 
 `?` no añade una comprobación automática en ejecución para referencias: el compilador analiza nulabilidad y emite advertencias.
 
-## 💾 Tipos de Valor vs Tipos de Referencia 
+### 💾 Tipos de Valor vs Tipos de Referencia 
 
 Esta es una de las cosas que más confunden cuando empiezas con C#. La idea clave es esta:
 
@@ -195,7 +195,7 @@ Esta es una de las cosas que más confunden cuando empiezas con C#. La idea clav
 Vamos a verlo con una analogía muy simple.
 
 
-### 1️⃣ Tipos de Valor → *Como una fotocopia en papel* 🧾
+#### 1️⃣ Tipos de Valor → *Como una fotocopia en papel* 🧾
 
 Un **tipo de valor guarda directamente el dato**.
 Cuando asignas una variable a otra, se hace una **copia independiente**.
@@ -207,7 +207,7 @@ Cuando asignas una variable a otra, se hace una **copia independiente**.
 | **Al copiar...** | Se crea una **copia nueva e independiente** del dato. | Haces **otra foto igual**, pero es una hoja distinta. |
 | **Ejemplos** | Tipos simples como `int`, `bool`, `decimal` y estructuras (`struct`). | |
 
-#### 🧠 Analogía
+##### 🧠 Analogía
 
 Es como hacer una **fotocopia de un documento**:
 
@@ -217,7 +217,7 @@ Es como hacer una **fotocopia de un documento**:
 
 Son dos hojas completamente separadas.
 
-#### ✅ Ejemplo simple en C#
+##### ✅ Ejemplo simple en C#
 
 ```csharp
 int vidasJugador1 = 3;
@@ -232,7 +232,7 @@ Console.WriteLine(vidasJugador2); // 1
 Aunque partían del mismo número, ahora cada variable tiene su propio valor.
 
 
-### 2️⃣ Tipos de Referencia → *Como un documento compartido en Google Drive* 🔗
+#### 2️⃣ Tipos de Referencia → *Como un documento compartido en Google Drive* 🔗
 
 Un **tipo de referencia no guarda el objeto en sí**, guarda una **referencia (dirección)** hacia ese objeto.
 
@@ -249,7 +249,7 @@ Cuando copias una variable:
 * Ambas variables apuntan **al mismo objeto**
 * Si una lo modifica, **la otra ve el cambio**
 
-#### 🧠 Analogía
+##### 🧠 Analogía
 
 Es como un **documento compartido online**:
 
@@ -259,7 +259,7 @@ Es como un **documento compartido online**:
 
 No hay dos documentos: hay **uno solo compartido**.
 
-#### ✅ Ejemplo simple en C#
+##### ✅ Ejemplo simple en C#
 
 ```csharp
 public class Cuenta
@@ -279,13 +279,13 @@ Console.WriteLine(cuenta2.Saldo); // 500
 Aquí **no hay dos cuentas**, hay **una sola compartida por dos variables**.
 
 
-### 📝 La diferencia en una frase
+#### 📝 La diferencia en una frase
 
 * ✅ **Tipos de Valor:** cada variable tiene su propio dato
 * ⚠️ **Tipos de Referencia:** varias variables comparten el mismo objeto
 
 
-### 📊 Resumen 
+#### 📊 Resumen 
 
 | Tipo           | ¿Qué se copia? | ¿Afecta al original? | Ejemplos                           |
 | -------------- | -------------- | -------------------- | ---------------------------------- |
@@ -306,7 +306,7 @@ Seguir estas convenciones de estilo es crucial para el *Clean Code* y la consist
 | **Campos Privados (Fields), incluidos los `readonly`** | **\_camelCase** | `private _name` | `private int _stockMinimo;` | `private` |
 | **Interfaces** | **Prefijo I + PascalCase** | `Interface Name` | `public interface IRepositorio;` | `public` |
 
-### Anatomía de una Clase Típica y Colecciones
+### Anatomía de una Clase Típica
 
 Una **clase** es la plantilla para crear objetos.
 
@@ -345,16 +345,6 @@ public class Producto
 var lapiz = new Producto("Lápiz HB"); 
 lapiz.AñadirStock(10);
 ```
-
-#### Colecciones Básicas
-
-Las colecciones te permiten agrupar datos:
-
-  * **`array`:** Colección de tamaño fijo y del mismo tipo. `int[] numeros = new int[5];`
-  * **`List<T>`:** Colección dinámica (genérica) del mismo tipo.
-  * **`Dictionary<TKey, TValue>`:** Colección de pares clave-valor (genérica).
-  * **`HashSet<T>`:** Colección sin orden y que garantiza que **no hay duplicados**.
-  * **`Tuple`:** Tipo de valor que permite agrupar varios elementos relacionados de diferentes tipos. `(int id, string name) user = (1, "Anna");`
 
 ### `static`: un dato común o una función que llamas desde la clase
 
@@ -567,7 +557,451 @@ public class RepositorioSql : IGuardable
     }
 }
 ```
-## 5. Arquitectura, inyección de dependencias y SOLID
+## 5\. 🔍 Generics y Colecciones
+
+Los **Genéricos (`<T>`)** nos permiten escribir código reutilizable y seguro sin especificar el tipo de dato exacto hasta el momento de usarlo.
+
+> **¿Por qué usarlos?** Evitan el "Boxing/Unboxing" (coste de rendimiento) y garantizan que no metas un `int` en una lista de `string` (seguridad de tipos).
+
+```csharp
+// Lista genérica: Solo acepta enteros
+List<int> numeros = new List<int>(); 
+
+// Método genérico
+public T DevolverElemento<T>(T elemento)
+{
+    return elemento;
+}
+```
+
+### Colecciones Básicas
+
+Las colecciones te permiten agrupar datos:
+
+  * **`array`:** Colección de tamaño fijo y del mismo tipo. `int[] numeros = new int[5];`
+  * **`List<T>`:** Colección dinámica (genérica) del mismo tipo.
+  * **`Dictionary<TKey, TValue>`:** Colección de pares clave-valor (genérica).
+  * **`HashSet<T>`:** Colección sin orden y que garantiza que **no hay duplicados**.
+  * **`Tuple`:** Tipo de valor que permite agrupar varios elementos relacionados de diferentes tipos. `(int id, string name) user = (1, "Anna");`
+
+## 6. Delegados y programación funcional
+
+### 🚀 Funciones de Primera Clase y Delegados (Callbacks)
+
+> **Concepto Clave:** En C\#, las funciones pueden tratarse como variables. Esto permite pasar lógica como parámetro (Callbacks).
+
+#### 1\. Action (Void)
+
+Delegado que **NO retorna valor** (void).
+
+  * *Uso:* Cuando quieres ejecutar algo (un log, una notificación) sin esperar respuesta.
+
+<!-- end list -->
+
+```csharp
+// Recibe un string, no devuelve nada
+void ProcesarDatos(Action<string> fnCallback, string mensaje) 
+{
+    Console.WriteLine("Inicio del proceso...");
+    fnCallback(mensaje); // Ejecutamos la función que nos pasaron
+    Console.WriteLine("Fin del proceso.");
+}
+
+// Uso:
+var miLogger = (string msg) => Console.WriteLine($"LOG: {msg}");
+ProcesarDatos(miLogger, "Usuario registrado");
+```
+
+#### 2\. Func (Return)
+
+Delegado que **SÍ retorna valor**.
+
+  * `Func<Entrada, Salida>`: El último tipo es siempre lo que devuelve.
+  * *Uso:* Transformar datos, cálculos, LINQ.
+
+<!-- end list -->
+
+```csharp
+// Recibe string, devuelve string transformado
+void Transformar(Func<string, string> fnTransformacion, string texto)
+{
+    string resultado = fnTransformacion(texto);
+    Console.WriteLine($"Resultado: {resultado}");
+}
+
+// Uso:
+var aMayusculas = (string s) => s.ToUpper();
+Transformar(aMayusculas, "hola mundo"); // Imprime: HOLA MUNDO
+```
+
+#### 3\. Lambda Functions (`=>`)
+
+Es la sintaxis concisa para crear delegados (`Action` o `Func`) en línea.
+
+```csharp
+// Lógica que recibe string y devuelve string (Func)
+Func<string, string> aMayusculas = (texto) => texto.ToUpper(); 
+
+// Lógica que recibe string y no devuelve nada (Action)
+Action<string> logger = (msg) => Console.WriteLine($"LOG: {msg}");
+```
+
+### Principios de programación funcional
+
+- **Funciones puras:** mismo input → mismo output; sin efectos secundarios.
+- **Inmutabilidad:** evita modificar datos compartidos; crea valores nuevos.
+- **Funciones de primera clase:** asigna funciones a variables, pásalas como argumentos y devuélvelas.
+- **Composición:** combina funciones pequeñas para construir una transformación mayor.
+- **Declarativo:** describe el resultado (`Where`, `Select`) en lugar de los pasos manuales.
+
+```csharp
+var numeros = new[] { -1, 2, 3 };
+var resultado = numeros
+    .Where(n => n > 0)
+    .Select(n => n * 2)
+    .ToArray(); // transforma; no modifica la lista original
+```
+
+LINQ suele usar **evaluación diferida**: espera hasta que el programa recorre los resultados para ejecutar la consulta. Por ejemplo, `ToArray()` la ejecuta y guarda los resultados en un array.
+
+## 7\. 📊 LINQ (Language Integrated Query)
+
+La herramienta más potente de .NET para manipular datos (Arrays, Listas, Bases de Datos).
+
+Existen dos sintaxis:
+
+1.  **Query Syntax (Parecido a SQL):** Más legible para consultas complejas.
+2.  **Method Syntax (Lambdas):** Más común, conciso y potente.
+
+<!-- end list -->
+
+```csharp
+var numeros = new List<int> { 1, 5, 8, 10, 3 };
+
+// 1. Method Syntax (Más usada en el día a día)
+var mayoresDeCinco = numeros.Where(n => n > 5).ToList();
+
+// 2. Query Syntax
+var query = from n in numeros
+            where n > 5 && n < 10
+            order by n
+            select n;
+```
+
+## 8. Web API: HTTP, controladores y datos
+
+### Controladores, endpoints y métodos HTTP
+
+![Recorrido de una petición HTTP: frontend, endpoint y controlador dentro de ASP.NET Core y .NET](docs/images/dotnet-http-diagram.png)
+
+- **HTTP:** reglas que usan el navegador o una app para comunicarse con un servidor. Envías una petición y recibes una respuesta.
+- **Controlador:** clase que agrupa las operaciones de una parte de la API. Por ejemplo, `ProductosController` atiende consultas y altas de productos. Es como una recepción: recibe la petición, pide el trabajo a los servicios necesarios y entrega la respuesta.
+- **Acción:** método del controlador que atiende una petición. Por ejemplo, `Obtener`.
+- **Endpoint:** punto de entrada a una operación de la API. Se identifica por el método HTTP y la ruta: `GET /api/productos/5`.
+
+```text
+La app pide: GET /api/productos/5
+    → ASP.NET Core encuentra la ruta y el método HTTP
+    → llama a Obtener(5) en ProductosController
+    → el controlador devuelve una respuesta a la app
+```
+
+El **método HTTP** indica qué operación solicita el cliente. La **ruta** indica sobre qué datos:
+
+| Método HTTP | Atributo en C# | Uso habitual | Ejemplo |
+|---|---|---|---|
+| `GET` | `[HttpGet]` | Consultar productos | `GET /api/productos` |
+| `POST` | `[HttpPost]` | Enviar un producto para crearlo | `POST /api/productos` |
+| `PUT` | `[HttpPut]` | Sustituir los datos de un producto | `PUT /api/productos/5` |
+| `PATCH` | `[HttpPatch]` | Cambiar solo algunos datos | `PATCH /api/productos/5` |
+| `DELETE` | `[HttpDelete]` | Eliminar un producto | `DELETE /api/productos/5` |
+
+`GET /api/productos` y `POST /api/productos` son endpoints diferentes, aunque compartan la ruta. Estos atributos seleccionan el método que se ejecuta; el código de ese método realiza la operación.
+
+**Ejemplo de controlador:** devuelve datos de muestra y recibe un producto, sin guardarlo en una base de datos.
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/productos")]
+public class ProductosController : ControllerBase
+{
+    [HttpGet("{id}")] // GET /api/productos/5
+    public IActionResult Obtener(int id)
+    {
+        return Ok(new { Id = id, Nombre = "Teclado" });
+    }
+
+    [HttpPost] // POST /api/productos
+    public IActionResult Recibir([FromBody] ProductoEntrada producto)
+    {
+        return Ok(new { Recibido = producto.Nombre });
+    }
+}
+
+public class ProductoEntrada
+{
+    public string Nombre { get; set; } = "";
+}
+```
+
+- `[Route("api/productos")]`: parte común de las direcciones del controlador.
+- `[HttpGet("{id}")]`: añade el identificador a esa ruta; el `5` de la URL llega al parámetro `id`.
+- `[FromBody]`: convierte el JSON enviado en el cuerpo de la petición en un objeto C#. Aquí puedes enviar `{"nombre":"Ratón"}`.
+- `ControllerBase`: clase de ASP.NET Core que aporta herramientas para responder, como `Ok(...)`.
+- `IActionResult`: representa la respuesta HTTP. `Ok(...)` devuelve el código **200** (correcto) y los datos indicados, normalmente como JSON.
+- `[ApiController]`: activa ayudas para APIs; por ejemplo, responde **400** (petición incorrecta) si los datos no superan la validación.
+
+Para activar los controladores, añade en `Program.cs`:
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+var app = builder.Build();
+app.MapControllers();
+app.Run();
+```
+
+Referencia: [APIs con controladores en ASP.NET Core](https://learn.microsoft.com/aspnet/core/web-api?view=aspnetcore-10.0).
+
+#### Cómo se construye la URL: rutas y nombres C#
+
+**El nombre del método C# no se añade automáticamente a la URL.** En el ejemplo anterior, `Obtener` atiende `GET /api/productos/5`: la dirección sale de `[Route("api/productos")]` + `[HttpGet("{id}")]`. Puedes renombrarlo y esa ruta seguirá igual.
+
+Los **tokens** son marcadores que ASP.NET Core sustituye al preparar las rutas. Ahorran escribir nombres repetidos:
+
+| Marcador | Se sustituye por | Ejemplo |
+|---|---|---|
+| `[controller]` | Nombre del controlador sin el sufijo `Controller` | `ProductosController` → `Productos` |
+| `[action]` | Nombre de la acción; normalmente, el nombre del método | `Obtener(int id)` → `Obtener` |
+| `{id}` | Valor que llega en la URL de cada petición | `/5` → `id = 5` |
+
+**Ejemplo con ambos tokens:**
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/[controller]/[action]")]
+public class ProductosController : ControllerBase
+{
+    [HttpGet("{id}")]
+    public IActionResult Obtener(int id) => Ok(new { Id = id });
+}
+```
+
+La ruta queda `GET /api/Productos/Obtener/5`. Aquí `Obtener` aparece porque hemos incluido `[action]`.
+
+| Ruta base del controlador | Atributo de `Obtener(int id)` | Endpoint resultante |
+|---|---|---|
+| `[Route("api/productos")]` | `[HttpGet("{id}")]` | `GET /api/productos/5` |
+| `[Route("api/[controller]")]` | `[HttpGet("{id}")]` | `GET /api/Productos/5` |
+| `[Route("api/[controller]/[action]")]` | `[HttpGet("{id}")]` | `GET /api/Productos/Obtener/5` |
+
+- **Ventaja:** menos nombres repetidos y un formato común para varios controladores.
+- **Consecuencia:** renombrar el controlador o la acción puede cambiar la URL cuando usas su token. Las rutas escritas explícitamente permiten mantener una URL estable aunque cambien los nombres C#.
+
+Referencia: [Enrutamiento y sustitución de tokens](https://learn.microsoft.com/aspnet/core/mvc/controllers/routing?view=aspnetcore-10.0#token-replacement-in-route-templates-controller-action-area).
+
+### Serialización y Deserialización
+
+Es el proceso de **convertir un objeto C\#** (como una instancia de una clase) **en un formato de transmisión** (como JSON o XML) y viceversa. Esto es fundamental para las API Web.
+
+  * **Serialización:** `Objeto C#` $\rightarrow$ `JSON/XML` (Para enviar datos a un cliente).
+  * **Deserialización:** `JSON/XML` $\rightarrow$ `Objeto C#` (Para recibir datos del cliente).
+
+La biblioteca estándar para esto en .NET es **`System.Text.Json`**.
+
+```csharp
+// Serialización a JSON
+var producto = new Producto("Teclado");
+string json = System.Text.Json.JsonSerializer.Serialize(producto);
+// Output: {"Nombre":"Teclado"}
+```
+
+### Petición POST: headers y body
+
+![Ejemplo de petición POST con headers, body JSON y respuesta HTTP](docs/images/http-post-headers-body.png)
+
+- **Headers (cabeceras):** información sobre el mensaje. `Content-Type` indica el formato enviado; `Accept`, el formato de respuesta que el cliente acepta.
+- **Body (cuerpo):** datos enviados; aquí, el nombre y el precio del producto en JSON.
+- El diagrama muestra una API que crea el producto y responde **201 Created**. El ejemplo C# anterior solo recibe los datos y responde **200 OK**.
+
+#### Usar los headers y el body en un controlador
+
+**Una misma acción puede recibir datos del body y de varios headers.** ASP.NET Core los lee y los entrega como parámetros al método:
+
+| Atributo | Qué lee | Ejemplo |
+|---|---|---|
+| `[FromBody]` | El cuerpo de la petición; convierte el JSON en un objeto C# | `{"a":10,"b":3}` → objeto `Numeros` |
+| `[FromHeader]` | La cabecera cuyo nombre coincide con el parámetro | Parámetro `host` → header `Host` |
+| `[FromHeader(Name = "Content-Length")]` | Una cabecera con el nombre indicado | Header `Content-Length` → parámetro `longitud` |
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/calculos")]
+public class CalculosController : ControllerBase
+{
+    [HttpPost("sumar")]
+    public IActionResult Sumar(
+        [FromBody] Numeros numeros,
+        [FromHeader] string? host,
+        [FromHeader(Name = "Content-Length")] long? longitud)
+    {
+        return Ok(new
+        {
+            Resultado = numeros.A + numeros.B,
+            Host = host,
+            BytesDelBody = longitud
+        });
+    }
+}
+
+public class Numeros
+{
+    public decimal A { get; set; }
+    public decimal B { get; set; }
+}
+```
+
+**Petición de ejemplo:**
+
+```http
+POST /api/calculos/sumar HTTP/1.1
+Host: localhost:5000
+Content-Type: application/json
+Content-Length: 14
+
+{"a":10,"b":3}
+```
+
+- `numeros.A` vale `10`; `numeros.B`, `3`; la suma devuelve `13`.
+- `host` contiene `localhost:5000`: dirección y puerto del servidor al que se envía la petición.
+- `longitud` vale `14`: tamaño del cuerpo en **bytes**, no número de campos JSON. Normalmente lo calcula el cliente HTTP; esta cabecera puede faltar, por eso usamos `long?`.
+- `Name` permite leer cabeceras con guiones o usar un nombre de parámetro distinto. Los nombres de cabecera no distinguen mayúsculas y minúsculas.
+- Usa un solo parámetro `[FromBody]`; agrupa los datos del cuerpo en una clase. Puedes añadir varios parámetros `[FromHeader]`.
+- Con `[ApiController]`, un objeto como `Numeros` normalmente se obtiene del body aunque omitas `[FromBody]`; escribirlo explícitamente deja claro de dónde vienen los datos.
+
+Referencia: [Origen de los parámetros de una acción](https://learn.microsoft.com/aspnet/core/web-api?view=aspnetcore-10.0#binding-source-parameter-inference).
+
+### GET por identificador: buscar y devolver un objeto
+
+Dentro de un controlador con `[Route("api/personas")]`, esta acción atiende `GET /api/personas/5`:
+
+```csharp
+[HttpGet("{id}")]
+public People Get(int id) => Repository.People.First(p => p.Id == id);
+```
+
+Se presupone que `People` es la clase de persona y `Repository.People` contiene la lista de personas.
+
+- `{id}` recibe el valor de la URL: `/5` → `id = 5`.
+- `Get` es el nombre interno del método; no añade `/Get` a esta ruta.
+- El primer `=>` abrevia el cuerpo del método: equivale a `{ return ...; }`.
+- `First(...)` es una operación de LINQ: busca y devuelve la primera persona que cumple la condición.
+- `p => p.Id == id` significa «para cada persona `p`, comprobar si su identificador coincide con el recibido».
+- El objeto devuelto se convierte normalmente en JSON; el cliente no necesita conocer la clase C# `People`.
+
+**Si no encuentra la persona, `First` lanza una excepción.** Para responder **404 Not Found** (no encontrado), usa `FirstOrDefault` y comprueba el resultado:
+
+```csharp
+[HttpGet("{id}")]
+public ActionResult<People> Get(int id)
+{
+    var persona = Repository.People.FirstOrDefault(p => p.Id == id);
+    if (persona is null)
+        return NotFound(); // HTTP 404
+
+    return Ok(persona);    // HTTP 200 + datos de la persona
+}
+```
+
+#### `ActionResult<T>`: devolver datos o un estado HTTP
+
+**`ActionResult<People>` permite que el mismo método devuelva una persona cuando la encuentra o una respuesta de error cuando no existe.** `People`, entre `< >`, indica el tipo de datos esperado.
+
+En el ejemplo anterior:
+
+```text
+GET /api/personas/5
+    → FirstOrDefault busca la persona
+    → No existe: return NotFound() → HTTP 404
+    → Existe:    return Ok(persona) → HTTP 200 + persona en JSON
+```
+
+- `return` termina la ejecución del método y entrega su resultado. Si devuelve `NotFound()`, ya no llega a `Ok(persona)`.
+- `Ok(persona)` prepara una respuesta correcta con los datos; ASP.NET Core los convierte normalmente en JSON.
+- `NotFound()` prepara una respuesta de recurso no encontrado; no devuelve un objeto `People`.
+
+| Tipo de retorno | Qué permite devolver | Uso habitual |
+|---|---|---|
+| `People` | Un objeto de ese tipo | Devolver datos directamente |
+| `IActionResult` | Respuestas HTTP como `Ok(...)` o `NotFound()` | Elegir el estado y contenido de la respuesta |
+| `ActionResult<People>` | Un objeto `People` o una respuesta HTTP | Declarar los datos esperados y responder con distintos estados |
+
+**Nombres parecidos:** una *acción* es el método del controlador; `ActionResult<T>` representa su resultado; `Action<T>` es un delegado de C# para ejecutar una función que no devuelve valor.
+
+#### `IActionResult`: elegir la respuesta del controlador
+
+**`IActionResult` es una interfaz que representa el resultado de una acción.** Permite devolver respuestas distintas según lo que ocurra: datos, errores o una respuesta sin contenido. ASP.NET Core usa ese resultado para enviar la respuesta HTTP.
+
+**Analogía:** es el sobre de la respuesta. Puede llevar un estado («correcto», «petición incorrecta»…) y contenido, como un objeto JSON.
+
+**Ejemplo: consultar si hay sitio para una reserva.** Para simplificar, suponemos que quedan cuatro plazas.
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/reservas")]
+public class ReservasController : ControllerBase
+{
+    [HttpGet("disponibilidad/{personas:int}")]
+    public IActionResult ConsultarDisponibilidad(int personas)
+    {
+        if (personas < 1)
+            return BadRequest("Indica al menos una persona.");
+
+        return Ok(new
+        {
+            Personas = personas,
+            Disponible = personas <= 4
+        });
+    }
+}
+```
+
+| Petición | Respuesta |
+|---|---|
+| `GET /api/reservas/disponibilidad/0` | **400**: cantidad incorrecta |
+| `GET /api/reservas/disponibilidad/2` | **200**: `{"personas":2,"disponible":true}` |
+| `GET /api/reservas/disponibilidad/6` | **200**: `{"personas":6,"disponible":false}` |
+
+No tener plazas sigue siendo una consulta correcta: devuelve **200** con `disponible: false`.
+
+| Respuesta C# | Código HTTP | Significado |
+|---|---|---|
+| `Ok(datos)` | 200 | Petición correcta; devuelve datos |
+| `BadRequest(mensaje)` | 400 | Datos de la petición incorrectos |
+| `NotFound()` | 404 | Recurso no encontrado |
+| `NoContent()` | 204 | Petición correcta; sin cuerpo de respuesta |
+
+`IActionResult` permite elegir estas respuestas sin declarar el tipo concreto de los datos. Si quieres indicar también ese tipo, usa `ActionResult<T>`; por ejemplo, `ActionResult<DisponibilidadReserva>`.
+
+### Swagger y OpenAPI
+
+- **OpenAPI** es un formato estándar para describir una API: rutas, métodos (`GET`, `POST`), parámetros y respuestas. Suele publicarse como un archivo JSON.
+- **Swagger** es el nombre de un conjunto de herramientas que usan esa descripción. **Swagger UI** la muestra como una página web y permite probar los endpoints desde el navegador.
+- Flujo: API ASP.NET Core → documento OpenAPI → Swagger UI → explorar y enviar peticiones.
+- En .NET 9 y posteriores, ASP.NET Core puede generar el documento OpenAPI integrado; para la página interactiva se añade una herramienta como Swagger UI. En .NET 6 y 8 es común encontrar Swashbuckle en las plantillas o proyectos existentes.
+- Habilita la interfaz solo en desarrollo, salvo que el acceso esté protegido: puede revelar rutas y detalles de la API.
+
+> **En una frase:** OpenAPI describe la API; Swagger UI convierte esa descripción en documentación interactiva para verla y probarla. [Documentación ASP.NET Core](https://learn.microsoft.com/es-es/aspnet/core/tutorials/web-api-help-pages-using-swagger?view=aspnetcore-10.0).
+
+## 9. Arquitectura, inyección de dependencias y SOLID
 
 ### 1. Arquitectura: quién hace cada trabajo
 
@@ -869,439 +1303,7 @@ La consola simula la entrega. Podemos implementar el mismo contrato para entrega
 
 Referencias: [Arquitectura por capas](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures), [Inyección de dependencias](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection) y [Ciclos de vida](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection/service-lifetimes).
 
-## 6\. 🔗 Datos, Serialización y Funcional
-
-### Serialización y Deserialización
-
-Es el proceso de **convertir un objeto C\#** (como una instancia de una clase) **en un formato de transmisión** (como JSON o XML) y viceversa. Esto es fundamental para las API Web.
-
-  * **Serialización:** `Objeto C#` $\rightarrow$ `JSON/XML` (Para enviar datos a un cliente).
-  * **Deserialización:** `JSON/XML` $\rightarrow$ `Objeto C#` (Para recibir datos del cliente).
-
-La biblioteca estándar para esto en .NET es **`System.Text.Json`**.
-
-```csharp
-// Serialización a JSON
-var producto = new Producto("Teclado");
-string json = System.Text.Json.JsonSerializer.Serialize(producto);
-// Output: {"Nombre":"Teclado"}
-```
-
-### Controladores, endpoints y métodos HTTP
-
-![Recorrido de una petición HTTP: frontend, endpoint y controlador dentro de ASP.NET Core y .NET](docs/images/dotnet-http-diagram.png)
-
-- **HTTP:** reglas que usan el navegador o una app para comunicarse con un servidor. Envías una petición y recibes una respuesta.
-- **Controlador:** clase que agrupa las operaciones de una parte de la API. Por ejemplo, `ProductosController` atiende consultas y altas de productos. Es como una recepción: recibe la petición, pide el trabajo a los servicios necesarios y entrega la respuesta.
-- **Acción:** método del controlador que atiende una petición. Por ejemplo, `Obtener`.
-- **Endpoint:** punto de entrada a una operación de la API. Se identifica por el método HTTP y la ruta: `GET /api/productos/5`.
-
-```text
-La app pide: GET /api/productos/5
-    → ASP.NET Core encuentra la ruta y el método HTTP
-    → llama a Obtener(5) en ProductosController
-    → el controlador devuelve una respuesta a la app
-```
-
-El **método HTTP** indica qué operación solicita el cliente. La **ruta** indica sobre qué datos:
-
-| Método HTTP | Atributo en C# | Uso habitual | Ejemplo |
-|---|---|---|---|
-| `GET` | `[HttpGet]` | Consultar productos | `GET /api/productos` |
-| `POST` | `[HttpPost]` | Enviar un producto para crearlo | `POST /api/productos` |
-| `PUT` | `[HttpPut]` | Sustituir los datos de un producto | `PUT /api/productos/5` |
-| `PATCH` | `[HttpPatch]` | Cambiar solo algunos datos | `PATCH /api/productos/5` |
-| `DELETE` | `[HttpDelete]` | Eliminar un producto | `DELETE /api/productos/5` |
-
-`GET /api/productos` y `POST /api/productos` son endpoints diferentes, aunque compartan la ruta. Estos atributos seleccionan el método que se ejecuta; el código de ese método realiza la operación.
-
-**Ejemplo de controlador:** devuelve datos de muestra y recibe un producto, sin guardarlo en una base de datos.
-
-```csharp
-using Microsoft.AspNetCore.Mvc;
-
-[ApiController]
-[Route("api/productos")]
-public class ProductosController : ControllerBase
-{
-    [HttpGet("{id}")] // GET /api/productos/5
-    public IActionResult Obtener(int id)
-    {
-        return Ok(new { Id = id, Nombre = "Teclado" });
-    }
-
-    [HttpPost] // POST /api/productos
-    public IActionResult Recibir([FromBody] ProductoEntrada producto)
-    {
-        return Ok(new { Recibido = producto.Nombre });
-    }
-}
-
-public class ProductoEntrada
-{
-    public string Nombre { get; set; } = "";
-}
-```
-
-- `[Route("api/productos")]`: parte común de las direcciones del controlador.
-- `[HttpGet("{id}")]`: añade el identificador a esa ruta; el `5` de la URL llega al parámetro `id`.
-- `[FromBody]`: convierte el JSON enviado en el cuerpo de la petición en un objeto C#. Aquí puedes enviar `{"nombre":"Ratón"}`.
-- `ControllerBase`: clase de ASP.NET Core que aporta herramientas para responder, como `Ok(...)`.
-- `IActionResult`: representa la respuesta HTTP. `Ok(...)` devuelve el código **200** (correcto) y los datos indicados, normalmente como JSON.
-- `[ApiController]`: activa ayudas para APIs; por ejemplo, responde **400** (petición incorrecta) si los datos no superan la validación.
-
-#### Petición POST: headers y body
-
-![Ejemplo de petición POST con headers, body JSON y respuesta HTTP](docs/images/http-post-headers-body.png)
-
-- **Headers (cabeceras):** información sobre el mensaje. `Content-Type` indica el formato enviado; `Accept`, el formato de respuesta que el cliente acepta.
-- **Body (cuerpo):** datos enviados; aquí, el nombre y el precio del producto en JSON.
-- El diagrama muestra una API que crea el producto y responde **201 Created**. El ejemplo C# anterior solo recibe los datos y responde **200 OK**.
-
-#### Usar los headers y el body en un controlador
-
-**Una misma acción puede recibir datos del body y de varios headers.** ASP.NET Core los lee y los entrega como parámetros al método:
-
-| Atributo | Qué lee | Ejemplo |
-|---|---|---|
-| `[FromBody]` | El cuerpo de la petición; convierte el JSON en un objeto C# | `{"a":10,"b":3}` → objeto `Numeros` |
-| `[FromHeader]` | La cabecera cuyo nombre coincide con el parámetro | Parámetro `host` → header `Host` |
-| `[FromHeader(Name = "Content-Length")]` | Una cabecera con el nombre indicado | Header `Content-Length` → parámetro `longitud` |
-
-```csharp
-using Microsoft.AspNetCore.Mvc;
-
-[ApiController]
-[Route("api/calculos")]
-public class CalculosController : ControllerBase
-{
-    [HttpPost("sumar")]
-    public IActionResult Sumar(
-        [FromBody] Numeros numeros,
-        [FromHeader] string? host,
-        [FromHeader(Name = "Content-Length")] long? longitud)
-    {
-        return Ok(new
-        {
-            Resultado = numeros.A + numeros.B,
-            Host = host,
-            BytesDelBody = longitud
-        });
-    }
-}
-
-public class Numeros
-{
-    public decimal A { get; set; }
-    public decimal B { get; set; }
-}
-```
-
-**Petición de ejemplo:**
-
-```http
-POST /api/calculos/sumar HTTP/1.1
-Host: localhost:5000
-Content-Type: application/json
-Content-Length: 14
-
-{"a":10,"b":3}
-```
-
-- `numeros.A` vale `10`; `numeros.B`, `3`; la suma devuelve `13`.
-- `host` contiene `localhost:5000`: dirección y puerto del servidor al que se envía la petición.
-- `longitud` vale `14`: tamaño del cuerpo en **bytes**, no número de campos JSON. Normalmente lo calcula el cliente HTTP; esta cabecera puede faltar, por eso usamos `long?`.
-- `Name` permite leer cabeceras con guiones o usar un nombre de parámetro distinto. Los nombres de cabecera no distinguen mayúsculas y minúsculas.
-- Usa un solo parámetro `[FromBody]`; agrupa los datos del cuerpo en una clase. Puedes añadir varios parámetros `[FromHeader]`.
-- Con `[ApiController]`, un objeto como `Numeros` normalmente se obtiene del body aunque omitas `[FromBody]`; escribirlo explícitamente deja claro de dónde vienen los datos.
-
-Referencia: [Origen de los parámetros de una acción](https://learn.microsoft.com/aspnet/core/web-api?view=aspnetcore-10.0#binding-source-parameter-inference).
-
-#### Cómo se construye la URL: rutas y nombres C#
-
-**El nombre del método C# no se añade automáticamente a la URL.** En el ejemplo anterior, `Obtener` atiende `GET /api/productos/5`: la dirección sale de `[Route("api/productos")]` + `[HttpGet("{id}")]`. Puedes renombrarlo y esa ruta seguirá igual.
-
-Los **tokens** son marcadores que ASP.NET Core sustituye al preparar las rutas. Ahorran escribir nombres repetidos:
-
-| Marcador | Se sustituye por | Ejemplo |
-|---|---|---|
-| `[controller]` | Nombre del controlador sin el sufijo `Controller` | `ProductosController` → `Productos` |
-| `[action]` | Nombre de la acción; normalmente, el nombre del método | `Obtener(int id)` → `Obtener` |
-| `{id}` | Valor que llega en la URL de cada petición | `/5` → `id = 5` |
-
-**Ejemplo con ambos tokens:**
-
-```csharp
-using Microsoft.AspNetCore.Mvc;
-
-[ApiController]
-[Route("api/[controller]/[action]")]
-public class ProductosController : ControllerBase
-{
-    [HttpGet("{id}")]
-    public IActionResult Obtener(int id) => Ok(new { Id = id });
-}
-```
-
-La ruta queda `GET /api/Productos/Obtener/5`. Aquí `Obtener` aparece porque hemos incluido `[action]`.
-
-| Ruta base del controlador | Atributo de `Obtener(int id)` | Endpoint resultante |
-|---|---|---|
-| `[Route("api/productos")]` | `[HttpGet("{id}")]` | `GET /api/productos/5` |
-| `[Route("api/[controller]")]` | `[HttpGet("{id}")]` | `GET /api/Productos/5` |
-| `[Route("api/[controller]/[action]")]` | `[HttpGet("{id}")]` | `GET /api/Productos/Obtener/5` |
-
-- **Ventaja:** menos nombres repetidos y un formato común para varios controladores.
-- **Consecuencia:** renombrar el controlador o la acción puede cambiar la URL cuando usas su token. Las rutas escritas explícitamente permiten mantener una URL estable aunque cambien los nombres C#.
-
-Referencia: [Enrutamiento y sustitución de tokens](https://learn.microsoft.com/aspnet/core/mvc/controllers/routing?view=aspnetcore-10.0#token-replacement-in-route-templates-controller-action-area).
-
-#### GET por identificador: buscar y devolver un objeto
-
-Dentro de un controlador con `[Route("api/personas")]`, esta acción atiende `GET /api/personas/5`:
-
-```csharp
-[HttpGet("{id}")]
-public People Get(int id) => Repository.People.First(p => p.Id == id);
-```
-
-Se presupone que `People` es la clase de persona y `Repository.People` contiene la lista de personas.
-
-- `{id}` recibe el valor de la URL: `/5` → `id = 5`.
-- `Get` es el nombre interno del método; no añade `/Get` a esta ruta.
-- El primer `=>` abrevia el cuerpo del método: equivale a `{ return ...; }`.
-- `First(...)` es una operación de LINQ: busca y devuelve la primera persona que cumple la condición.
-- `p => p.Id == id` significa «para cada persona `p`, comprobar si su identificador coincide con el recibido».
-- El objeto devuelto se convierte normalmente en JSON; el cliente no necesita conocer la clase C# `People`.
-
-**Si no encuentra la persona, `First` lanza una excepción.** Para responder **404 Not Found** (no encontrado), usa `FirstOrDefault` y comprueba el resultado:
-
-```csharp
-[HttpGet("{id}")]
-public ActionResult<People> Get(int id)
-{
-    var persona = Repository.People.FirstOrDefault(p => p.Id == id);
-    if (persona is null)
-        return NotFound(); // HTTP 404
-
-    return Ok(persona);    // HTTP 200 + datos de la persona
-}
-```
-
-#### `ActionResult<T>`: devolver datos o un estado HTTP
-
-**`ActionResult<People>` permite que el mismo método devuelva una persona cuando la encuentra o una respuesta de error cuando no existe.** `People`, entre `< >`, indica el tipo de datos esperado.
-
-En el ejemplo anterior:
-
-```text
-GET /api/personas/5
-    → FirstOrDefault busca la persona
-    → No existe: return NotFound() → HTTP 404
-    → Existe:    return Ok(persona) → HTTP 200 + persona en JSON
-```
-
-- `return` termina la ejecución del método y entrega su resultado. Si devuelve `NotFound()`, ya no llega a `Ok(persona)`.
-- `Ok(persona)` prepara una respuesta correcta con los datos; ASP.NET Core los convierte normalmente en JSON.
-- `NotFound()` prepara una respuesta de recurso no encontrado; no devuelve un objeto `People`.
-
-| Tipo de retorno | Qué permite devolver | Uso habitual |
-|---|---|---|
-| `People` | Un objeto de ese tipo | Devolver datos directamente |
-| `IActionResult` | Respuestas HTTP como `Ok(...)` o `NotFound()` | Elegir el estado y contenido de la respuesta |
-| `ActionResult<People>` | Un objeto `People` o una respuesta HTTP | Declarar los datos esperados y responder con distintos estados |
-
-**Nombres parecidos:** una *acción* es el método del controlador; `ActionResult<T>` representa su resultado; `Action<T>` es un delegado de C# para ejecutar una función que no devuelve valor.
-
-#### `IActionResult`: elegir la respuesta del controlador
-
-**`IActionResult` es una interfaz que representa el resultado de una acción.** Permite devolver respuestas distintas según lo que ocurra: datos, errores o una respuesta sin contenido. ASP.NET Core usa ese resultado para enviar la respuesta HTTP.
-
-**Analogía:** es el sobre de la respuesta. Puede llevar un estado («correcto», «petición incorrecta»…) y contenido, como un objeto JSON.
-
-**Ejemplo: consultar si hay sitio para una reserva.** Para simplificar, suponemos que quedan cuatro plazas.
-
-```csharp
-using Microsoft.AspNetCore.Mvc;
-
-[ApiController]
-[Route("api/reservas")]
-public class ReservasController : ControllerBase
-{
-    [HttpGet("disponibilidad/{personas:int}")]
-    public IActionResult ConsultarDisponibilidad(int personas)
-    {
-        if (personas < 1)
-            return BadRequest("Indica al menos una persona.");
-
-        return Ok(new
-        {
-            Personas = personas,
-            Disponible = personas <= 4
-        });
-    }
-}
-```
-
-| Petición | Respuesta |
-|---|---|
-| `GET /api/reservas/disponibilidad/0` | **400**: cantidad incorrecta |
-| `GET /api/reservas/disponibilidad/2` | **200**: `{"personas":2,"disponible":true}` |
-| `GET /api/reservas/disponibilidad/6` | **200**: `{"personas":6,"disponible":false}` |
-
-No tener plazas sigue siendo una consulta correcta: devuelve **200** con `disponible: false`.
-
-| Respuesta C# | Código HTTP | Significado |
-|---|---|---|
-| `Ok(datos)` | 200 | Petición correcta; devuelve datos |
-| `BadRequest(mensaje)` | 400 | Datos de la petición incorrectos |
-| `NotFound()` | 404 | Recurso no encontrado |
-| `NoContent()` | 204 | Petición correcta; sin cuerpo de respuesta |
-
-`IActionResult` permite elegir estas respuestas sin declarar el tipo concreto de los datos. Si quieres indicar también ese tipo, usa `ActionResult<T>`; por ejemplo, `ActionResult<DisponibilidadReserva>`.
-
-Para activar los controladores, añade en `Program.cs`:
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddControllers();
-var app = builder.Build();
-app.MapControllers();
-app.Run();
-```
-
-Referencia: [APIs con controladores en ASP.NET Core](https://learn.microsoft.com/aspnet/core/web-api?view=aspnetcore-10.0).
-
-### Swagger y OpenAPI
-
-- **OpenAPI** es un formato estándar para describir una API: rutas, métodos (`GET`, `POST`), parámetros y respuestas. Suele publicarse como un archivo JSON.
-- **Swagger** es el nombre de un conjunto de herramientas que usan esa descripción. **Swagger UI** la muestra como una página web y permite probar los endpoints desde el navegador.
-- Flujo: API ASP.NET Core → documento OpenAPI → Swagger UI → explorar y enviar peticiones.
-- En .NET 9 y posteriores, ASP.NET Core puede generar el documento OpenAPI integrado; para la página interactiva se añade una herramienta como Swagger UI. En .NET 6 y 8 es común encontrar Swashbuckle en las plantillas o proyectos existentes.
-- Habilita la interfaz solo en desarrollo, salvo que el acceso esté protegido: puede revelar rutas y detalles de la API.
-
-> **En una frase:** OpenAPI describe la API; Swagger UI convierte esa descripción en documentación interactiva para verla y probarla. [Documentación ASP.NET Core](https://learn.microsoft.com/es-es/aspnet/core/tutorials/web-api-help-pages-using-swagger?view=aspnetcore-10.0).
-
-### 🚀 Funciones de Primera Clase y Delegados (Callbacks)
-
-> **Concepto Clave:** En C\#, las funciones pueden tratarse como variables. Esto permite pasar lógica como parámetro (Callbacks).
-
-### Principios de programación funcional
-
-- **Funciones puras:** mismo input → mismo output; sin efectos secundarios.
-- **Inmutabilidad:** evita modificar datos compartidos; crea valores nuevos.
-- **Funciones de primera clase:** asigna funciones a variables, pásalas como argumentos y devuélvelas.
-- **Composición:** combina funciones pequeñas para construir una transformación mayor.
-- **Declarativo:** describe el resultado (`Where`, `Select`) en lugar de los pasos manuales.
-
-```csharp
-var numeros = new[] { -1, 2, 3 };
-var resultado = numeros
-    .Where(n => n > 0)
-    .Select(n => n * 2)
-    .ToArray(); // transforma; no modifica la lista original
-```
-
-LINQ suele usar **evaluación diferida**: espera hasta que el programa recorre los resultados para ejecutar la consulta. Por ejemplo, `ToArray()` la ejecuta y guarda los resultados en un array.
-
-#### 1\. Action (Void)
-
-Delegado que **NO retorna valor** (void).
-
-  * *Uso:* Cuando quieres ejecutar algo (un log, una notificación) sin esperar respuesta.
-
-<!-- end list -->
-
-```csharp
-// Recibe un string, no devuelve nada
-void ProcesarDatos(Action<string> fnCallback, string mensaje) 
-{
-    Console.WriteLine("Inicio del proceso...");
-    fnCallback(mensaje); // Ejecutamos la función que nos pasaron
-    Console.WriteLine("Fin del proceso.");
-}
-
-// Uso:
-var miLogger = (string msg) => Console.WriteLine($"LOG: {msg}");
-ProcesarDatos(miLogger, "Usuario registrado");
-```
-
-#### 2\. Func (Return)
-
-Delegado que **SÍ retorna valor**.
-
-  * `Func<Entrada, Salida>`: El último tipo es siempre lo que devuelve.
-  * *Uso:* Transformar datos, cálculos, LINQ.
-
-<!-- end list -->
-
-```csharp
-// Recibe string, devuelve string transformado
-void Transformar(Func<string, string> fnTransformacion, string texto)
-{
-    string resultado = fnTransformacion(texto);
-    Console.WriteLine($"Resultado: {resultado}");
-}
-
-// Uso:
-var aMayusculas = (string s) => s.ToUpper();
-Transformar(aMayusculas, "hola mundo"); // Imprime: HOLA MUNDO
-```
-
-#### 3\. Lambda Functions (`=>`)
-
-Es la sintaxis concisa para crear delegados (`Action` o `Func`) en línea.
-
-```csharp
-// Lógica que recibe string y devuelve string (Func)
-Func<string, string> aMayusculas = (texto) => texto.ToUpper(); 
-
-// Lógica que recibe string y no devuelve nada (Action)
-Action<string> logger = (msg) => Console.WriteLine($"LOG: {msg}");
-```
-
-## 7\. 🔍 Generics y Colecciones
-
-Los **Genéricos (`<T>`)** nos permiten escribir código reutilizable y seguro sin especificar el tipo de dato exacto hasta el momento de usarlo.
-
-> **¿Por qué usarlos?** Evitan el "Boxing/Unboxing" (coste de rendimiento) y garantizan que no metas un `int` en una lista de `string` (seguridad de tipos).
-
-```csharp
-// Lista genérica: Solo acepta enteros
-List<int> numeros = new List<int>(); 
-
-// Método genérico
-public T DevolverElemento<T>(T elemento)
-{
-    return elemento;
-}
-```
-
-## 8\. 📊 LINQ (Language Integrated Query)
-
-La herramienta más potente de .NET para manipular datos (Arrays, Listas, Bases de Datos).
-
-Existen dos sintaxis:
-
-1.  **Query Syntax (Parecido a SQL):** Más legible para consultas complejas.
-2.  **Method Syntax (Lambdas):** Más común, conciso y potente.
-
-<!-- end list -->
-
-```csharp
-var numeros = new List<int> { 1, 5, 8, 10, 3 };
-
-// 1. Method Syntax (Más usada en el día a día)
-var mayoresDeCinco = numeros.Where(n => n > 5).ToList();
-
-// 2. Query Syntax
-var query = from n in numeros
-            where n > 5 && n < 10
-            order by n
-            select n;
-```
-
-## 9\. 🌐 Instalación y verificación de IIS (Internet Information Services)
+## 10\. 🌐 Instalación y verificación de IIS (Internet Information Services)
 
 IIS es el servidor web de Microsoft integrado en Windows. Para utilizarlo, primero hay que habilitarlo como una característica del sistema operativo.
 
