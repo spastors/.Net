@@ -523,6 +523,8 @@ string json = System.Text.Json.JsonSerializer.Serialize(producto);
 
 ### Controladores, endpoints y métodos HTTP
 
+![Recorrido de una petición HTTP: frontend, endpoint y controlador dentro de ASP.NET Core y .NET](docs/images/dotnet-http-diagram.png)
+
 - **HTTP:** reglas que usan el navegador o una app para comunicarse con un servidor. Envías una petición y recibes una respuesta.
 - **Controlador:** clase que agrupa las operaciones de una parte de la API. Por ejemplo, `ProductosController` atiende consultas y altas de productos. Es como una recepción: recibe la petición, pide el trabajo a los servicios necesarios y entrega la respuesta.
 - **Acción:** método del controlador que atiende una petición. Por ejemplo, `Obtener`.
