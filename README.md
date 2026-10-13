@@ -344,7 +344,6 @@ public class Producto
 // Uso:
 var lapiz = new Producto("Lápiz HB"); 
 lapiz.AñadirStock(10);
-}
 ```
 
 #### Colecciones Básicas
@@ -357,55 +356,62 @@ Las colecciones te permiten agrupar datos:
   * **`HashSet<T>`:** Colección sin orden y que garantiza que **no hay duplicados**.
   * **`Tuple`:** Tipo de valor que permite agrupar varios elementos relacionados de diferentes tipos. `(int id, string name) user = (1, "Anna");`
 
-### `static`: un miembro compartido por la clase
+### `static`: un dato común o una función que llamas desde la clase
 
-**`static` hace que un campo o método pertenezca a la clase.** Un campo estático se comparte entre sus objetos; un campo sin `static` pertenece a cada objeto.
+**Sin `static`, el dato pertenece a cada objeto. Con `static`, pertenece a la clase y se comparte.**
 
-**Analogía:** `static` es la pizarra común del aula. Sin `static`, cada alumno tiene su propio cuaderno.
-
-| Miembro | Cómo se usa | Qué se comparte |
-|---|---|---|
-| Con `static` | `Registro.Compartida` | Una misma lista para toda la clase |
-| Sin `static` | `registro.Propia` | Cada objeto tiene su propia lista |
-
-En este ejemplo:
+**Ejemplo: los empleados de un cine.** Cada empleado tiene su nombre, pero todos trabajan para la misma empresa.
 
 ```csharp
-public static List<People> People = new List<People>();
-```
+var lucia = new Empleado { Nombre = "Lucía" };
+var marcos = new Empleado { Nombre = "Marcos" };
 
-- `public`: permite acceder al campo desde otras clases.
-- `static`: mantiene una lista compartida, aunque crees varios objetos de la clase que la contiene.
-- `List<People>`: tipo del campo; una lista de objetos de tipo `People`.
-- El segundo `People`: nombre del campo que guarda la lista.
-- `new List<People>()`: crea la lista inicialmente vacía. `static` permite acceder al campo sin crear un objeto de la clase que lo contiene; la lista sí se crea con `new`.
+System.Console.WriteLine(lucia.Nombre);    // Lucía
+System.Console.WriteLine(marcos.Nombre);   // Marcos
+System.Console.WriteLine(Empleado.Empresa); // Cine Centro
 
-**Ejemplo de lista compartida frente a listas independientes:**
+// Cambiamos el dato común una sola vez.
+Empleado.Empresa = "Cine Norte";
+System.Console.WriteLine($"{lucia.Nombre}: {Empleado.Empresa}");  // Lucía: Cine Norte
+System.Console.WriteLine($"{marcos.Nombre}: {Empleado.Empresa}"); // Marcos: Cine Norte
 
-```csharp
-using System;
-using System.Collections.Generic;
-
-var a = new Registro();
-var b = new Registro();
-
-Registro.Compartida.Add("Ana");
-a.Propia.Add("Luis");
-
-Console.WriteLine(Registro.Compartida.Count); // 1: lista compartida
-Console.WriteLine(a.Propia.Count);           // 1: lista del objeto a
-Console.WriteLine(b.Propia.Count);           // 0: lista del objeto b
-
-public class Registro
+public class Empleado
 {
-    public static List<string> Compartida = new();
-    public List<string> Propia = new();
+    public string Nombre { get; set; } = "";      // Uno por empleado
+    public static string Empresa = "Cine Centro"; // Común a la clase
 }
 ```
 
-- También hay **métodos estáticos**: `Math.Max(3, 7)` se llama sin crear un objeto `Math`.
-- `static` permite modificar la lista; no la hace constante ni evita conflictos si varias peticiones la modifican a la vez.
-- En una Web API, una lista estática se comparte entre las peticiones atendidas por esa aplicación. Sus datos se pierden al reiniciarla y no se comparten automáticamente entre varios servidores.
+| Dato | Cómo se lee | Qué significa |
+|---|---|---|
+| `Nombre`, sin `static` | `lucia.Nombre` | El nombre de ese empleado |
+| `Empresa`, con `static` | `Empleado.Empresa` | El nombre común de la empresa |
+
+**Analogía:** el nombre de cada empleado está en su tarjeta. El nombre de la empresa está en el cartel común del cine.
+
+Una lista con `static` funciona igual: hay una lista compartida, no una lista nueva por cada objeto. Una lista sin `static`, creada dentro de cada objeto, es independiente.
+
+#### Métodos estáticos
+
+Un método `static` se llama usando el nombre de la clase. Es útil para operaciones que no necesitan datos de un objeto concreto:
+
+```csharp
+System.Console.WriteLine(Tiempo.ConvertirASegundos(2)); // 120
+
+public static class Tiempo
+{
+    public static int ConvertirASegundos(int minutos)
+    {
+        return minutos * 60;
+    }
+}
+```
+
+No necesitamos crear `new Tiempo()`: entregamos los minutos y obtenemos los segundos. Una clase declarada `static` no se instancia y contiene miembros estáticos.
+
+- `static` no significa «no se puede cambiar»: el ejemplo cambia la empresa.
+- En una API, los datos estáticos se comparten entre las peticiones de esa aplicación. Evita usarlos para guardar el carrito o los datos personales de cada usuario.
+- Una lista estática no es una base de datos: se pierde al reiniciar la aplicación y modificarla desde varias peticiones a la vez requiere coordinación.
 
 ### Modificadores de Acceso y Sobrecarga
 
@@ -556,279 +562,305 @@ public class RepositorioSql : IGuardable
 ```
 ## 5. Arquitectura, inyección de dependencias y SOLID
 
-### 1. Arquitectura y división de responsabilidades
+### 1. Arquitectura: quién hace cada trabajo
 
-**Separar responsabilidades** significa que cada componente se encarga de una parte del trabajo. Las capas pueden empezar como carpetas dentro del mismo proyecto; no necesitan servidores ni proyectos separados.
+**Ejemplo común: una aplicación para comprar entradas de cine.** Antes de comprar, el usuario consulta el precio. En este ejemplo, los menores de 18 años pagan 7 € y los adultos, 10 €.
 
-| Componente / capa | Responsabilidad | Ejemplo |
+Separar la aplicación significa repartir el trabajo entre clases. Podemos empezar con carpetas dentro de un único proyecto.
+
+| Pieza | Qué hace | En nuestro cine |
 |---|---|---|
-| **Controlador / presentación** | Recibir HTTP, validar la entrada y delegar. Convertir el resultado en una respuesta HTTP | Leer el peso de un envío y devolver su precio |
-| **Servicio / caso de uso / aplicación** | Coordinar una operación de negocio: llamar al dominio y, cuando haga falta, guardar datos o enviar avisos | Cotizar un envío |
-| **Dominio** | Expresar las reglas del negocio, independientemente de HTTP o de la base de datos | El peso debe ser positivo; calcular la tarifa |
-| **Infraestructura** | Acceder a bases de datos y servicios externos | Guardar el envío en SQL |
-| **Interfaces** | Definir contratos entre componentes. Permitir cambiar implementaciones y simular dependencias al probar | Contrato del servicio de cotización |
+| **Controlador** | Recibe la petición HTTP, comprueba la entrada y devuelve una respuesta | Recibe la edad y devuelve el precio |
+| **Servicio / caso de uso** | Realiza una operación de la aplicación | Calcula el precio; en una compra podría coordinar cobro, guardado y envío de la entrada |
+| **Dominio** | Contiene las reglas del negocio | Un menor paga 7 €; un adulto, 10 € |
+| **Infraestructura** | Se comunica con una base de datos u otros sistemas | Guarda entradas o utiliza un proveedor de correo |
+| **Interfaz** | Declara qué operaciones ofrece una pieza | Permite pedir un precio sin conocer el cálculo concreto |
 
-**Flujo de una petición:** cliente → controlador → caso de uso → reglas de dominio → resultado → respuesta HTTP. Si hay persistencia, el caso de uso llama a infraestructura mediante un contrato.
+**Una petición paso a paso:**
 
-- El controlador comprueba que la entrada sea aceptable; no calcula tarifas ni contiene consultas SQL.
-- El dominio protege sus reglas aunque lo use una consola o un proceso sin HTTP.
-- El caso de uso organiza el trabajo; los detalles de SQL o de un proveedor externo quedan en infraestructura.
-- Los contratos suelen definirse en aplicación o dominio; sus implementaciones dependen de esos contratos.
+1. El navegador envía `GET /api/entradas/precio?edad=15`.
+2. El controlador recibe `edad = 15` y comprueba que no sea negativa.
+3. Pide al servicio que calcule el precio.
+4. El servicio aplica la regla del cine y devuelve `7`.
+5. El controlador responde **200 OK** con `{"precio":7}`.
 
-#### Inyección de dependencias (DI)
+**Analogía:** el controlador es quien te atiende en taquilla; el servicio realiza el trabajo; las reglas de dominio son las tarifas del cine.
 
-Una **dependencia** es un objeto que otro necesita para trabajar. **DI** consiste en entregar ese objeto desde fuera, normalmente por el constructor.
+En este ejemplo pequeño, el servicio contiene la regla de precio. Si las reglas crecen, podemos separarlas en clases de dominio. El controlador sigue atendiendo HTTP y delegando el cálculo.
 
-**Analogía:** el controlador recibe una herramienta preparada; no tiene que fabricarla.
+#### Interfaz y servicio: pedir algo y realizarlo
 
-- ASP.NET Core incluye un **contenedor DI**: un registro que sabe crear y conectar los componentes.
-- Registramos qué implementación corresponde a cada contrato y cuánto tiempo se reutiliza.
-- Al crear un controlador, ASP.NET Core entrega las dependencias de su constructor.
-- Esto facilita cambiar implementaciones, separar responsabilidades y probar cada componente.
-
-**Ejemplo completo: cotizar un envío.** La tarifa de muestra es 5 € más 2 € por kilogramo.
+Una **interfaz** es un contrato: indica qué puedes pedir. El servicio es la clase que lo realiza.
 
 ```csharp
-// Program.cs: registrar servicios y activar controladores.
+public interface IEntradaService
+{
+    decimal CalcularPrecio(int edad);
+}
+
+public class EntradaService : IEntradaService
+{
+    public decimal CalcularPrecio(int edad)
+    {
+        if (edad < 0)
+            throw new System.ArgumentOutOfRangeException(nameof(edad));
+
+        if (edad < 18)
+            return 7m;
+
+        return 10m;
+    }
+}
+```
+
+- `IEntradaService` promete una operación: calcular un precio a partir de una edad.
+- `EntradaService` cumple esa promesa con las tarifas del cine.
+- La regla no conoce rutas, JSON ni códigos HTTP. Se puede usar también desde una aplicación de consola.
+- El servicio rechaza edades negativas incluso si se llama sin pasar por el controlador.
+
+#### Inyección de dependencias: entregar el servicio al controlador
+
+El controlador necesita un servicio para trabajar. Ese servicio es su **dependencia**.
+
+**Inyectar** significa entregárselo desde fuera. En ASP.NET Core, lo recibimos por el constructor: el método que se ejecuta al crear el objeto.
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/entradas")]
+public class EntradasController : ControllerBase
+{
+    private readonly IEntradaService _entradaService;
+
+    public EntradasController(IEntradaService entradaService)
+    {
+        _entradaService = entradaService;
+    }
+
+    [HttpGet("precio")]
+    public IActionResult ConsultarPrecio([FromQuery] int edad)
+    {
+        if (edad < 0)
+            return BadRequest("La edad no puede ser negativa.");
+
+        decimal precio = _entradaService.CalcularPrecio(edad);
+        return Ok(new { Precio = precio });
+    }
+}
+```
+
+- `entradaService`: el servicio que llega al constructor.
+- `_entradaService`: el campo que lo guarda para usarlo al atender la petición.
+- `[FromQuery]`: lee `edad` de la parte `?edad=15` de la URL.
+- El controlador valida la entrada HTTP; el servicio protege la regla para cualquier forma de uso.
+
+#### ¿Quién crea y entrega ese servicio?
+
+El **contenedor DI** de ASP.NET Core. Es un registro de servicios: le decimos qué clase debe utilizar cuando alguien pida una dependencia.
+
+En `Program.cs`:
+
+```csharp
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddControllers();
-builder.Services.AddScoped<ICotizarEnvio, CotizarEnvio>();
+builder.Services.AddScoped<IEntradaService, EntradaService>();
+
 var app = builder.Build();
 app.MapControllers();
 app.Run();
 ```
 
-```csharp
-using System;
-using Microsoft.AspNetCore.Mvc;
+La línea `AddScoped<IEntradaService, EntradaService>()` significa: **«Cuando pidan IEntradaService, entrega un EntradaService y reutilízalo dentro de esa petición».**
 
-// Contrato: qué puede pedir el controlador.
-public interface ICotizarEnvio
-{
-    decimal Ejecutar(decimal peso);
-}
+Al crear `EntradasController`, ASP.NET Core ve su constructor, obtiene el servicio y se lo entrega.
 
-// Dominio: reglas de negocio, sin HTTP.
-public static class TarifaEnvio
-{
-    public static decimal Calcular(decimal peso)
-    {
-        if (peso <= 0)
-            throw new ArgumentOutOfRangeException(nameof(peso));
-        return 5m + peso * 2m;
-    }
-}
+**¿Para qué sirve?**
 
-// Aplicación: ejecutar el caso de uso.
-public class CotizarEnvio : ICotizarEnvio
-{
-    public decimal Ejecutar(decimal peso) => TarifaEnvio.Calcular(peso);
-}
+- El controlador puede usar otro servicio que cumpla el mismo contrato.
+- En una prueba, podemos entregarle un servicio de ejemplo con un precio conocido.
+- ASP.NET Core se encarga de crear y reutilizar los objetos según su registro.
 
-// Presentación: traducir entrada y salida HTTP.
-[ApiController]
-[Route("api/envios")]
-public class EnviosController : ControllerBase
-{
-    private readonly ICotizarEnvio _cotizarEnvio;
+### 2. Ciclos de vida: cuándo se comparte el servicio
 
-    public EnviosController(ICotizarEnvio cotizarEnvio)
-    {
-        _cotizarEnvio = cotizarEnvio;
-    }
+Los tres registros hacen funcionar la inyección. Cambia **cuándo se crea un objeto nuevo y cuándo se reutiliza el existente**.
 
-    [HttpGet("cotizar")]
-    public IActionResult Cotizar([FromQuery] decimal peso)
-    {
-        if (peso <= 0)
-            return BadRequest("El peso debe ser positivo.");
-        return Ok(new { Precio = _cotizarEnvio.Ejecutar(peso) });
-    }
-}
-```
+**Imagina que dos componentes piden el mismo servicio durante una petición:**
 
-`GET /api/envios/cotizar?peso=3` devuelve un precio de **11**. `[FromQuery]` lee el parámetro situado después de `?` en la URL. El controlador y el dominio comprueban el peso para proteger sus respectivas entradas.
-
-`AddScoped<ICotizarEnvio, CotizarEnvio>()` conecta el contrato con su implementación. El constructor recibe el servicio; no hace falta escribir `new CotizarEnvio()` dentro del controlador.
-
-### 2. Ciclos de vida de DI (Service Lifetimes)
-
-El **ciclo de vida** indica cuándo crea el contenedor un objeto y cuándo lo reutiliza. No indica cuánto dura una tarea ni si el servicio es asíncrono.
-
-| Registro | Cuándo crea una instancia | Impacto en memoria | Caso típico |
+| Registro | Dentro de esa petición | En la petición siguiente | Memoria y uso típico |
 |---|---|---|---|
-| **Transient** | Cada vez que el contenedor lo solicita | Puede crear varios objetos en una petición; más asignaciones y trabajo de limpieza de memoria | Un formateador pequeño, sin estado |
-| **Scoped** | Una vez por ámbito; en una API, normalmente por petición HTTP | Comparte la instancia dentro de la petición; peticiones distintas tienen instancias distintas | Caso de uso, repositorio o `DbContext` de EF Core |
-| **Singleton** | Una vez por contenedor; se reutiliza durante la aplicación | La instancia y los objetos que retiene permanecen disponibles durante ese tiempo | Servicio sin estado, costoso de crear y seguro para uso simultáneo |
+| **Transient** | Cada componente recibe un objeto distinto | Se crean objetos nuevos al solicitarlos | Más objetos creados. Útil para una herramienta pequeña que da formato a un texto |
+| **Scoped** | Ambos reciben el mismo objeto | Se crea otro para esa petición | Un objeto por petición, si se solicita. Habitual para servicios que trabajan con datos de esa petición |
+| **Singleton** | Ambos reciben el mismo objeto | Se reutiliza el mismo | Un objeto para toda la aplicación. Útil para un servicio de configuración o un catálogo compartido de solo lectura |
 
-Un **ámbito (scope)** agrupa las dependencias que deben compartir una instancia. ASP.NET Core crea uno para cada petición HTTP. `DbContext` es el objeto de EF Core que consulta y guarda datos en la base de datos.
+**Una instancia** es un objeto creado a partir de una clase. Un **scope** es un grupo que comparte sus servicios; en una API, normalmente corresponde a una petición HTTP.
 
-**Tres alternativas para registrar el mismo servicio; elegir solo una:**
+Para nuestro servicio de entradas, usaremos **Scoped**:
 
 ```csharp
-builder.Services.AddTransient<ICotizarEnvio, CotizarEnvio>();
-builder.Services.AddScoped<ICotizarEnvio, CotizarEnvio>();
-builder.Services.AddSingleton<ICotizarEnvio, CotizarEnvio>();
+builder.Services.AddScoped<IEntradaService, EntradaService>();
+
+// Alternativas: sustituir la línea anterior por UNA de estas.
+// builder.Services.AddTransient<IEntradaService, EntradaService>();
+// builder.Services.AddSingleton<IEntradaService, EntradaService>();
 ```
 
-- **Transient** significa «nuevo al solicitarlo al contenedor», no «nuevo en cada llamada a un método».
-- Un singleton se comparte entre peticiones y usuarios. No guardar en él datos propios de una petición.
-- No inyectar directamente un servicio scoped en el constructor de un singleton. El singleton viviría más que el ámbito de esa dependencia.
-- Compartir una instancia no la hace segura para ejecución simultánea. Un singleton debe soportar ese uso; scoped tampoco evita conflictos si se usa en paralelo dentro de la petición.
-- El contenedor libera los recursos de los servicios que crea y que implementan `IDisposable`: scoped al cerrar el ámbito; singleton al cerrar el contenedor. La memoria administrada se recupera después, cuando el recolector de basura determina que ya no se usa.
+- **Transient:** «nuevo cada vez que lo pide el contenedor», no en cada llamada a su método.
+- **Scoped:** suele encajar con `DbContext`, el objeto de EF Core que consulta y guarda datos en la base de datos.
+- **Singleton:** se comparte entre usuarios. No guardar ahí la edad, la compra o el carrito de un usuario.
+- No guardar un servicio scoped dentro de un singleton: el singleton puede seguir vivo después de terminar esa petición.
+- Si varias peticiones modifican un objeto compartido, puede haber conflictos. El registro DI no evita esos conflictos.
+- Al terminar una petición, el contenedor libera los recursos de sus servicios scoped que lo requieren. La memoria se recupera cuando los objetos dejan de usarse y actúa el recolector de basura. Los singleton permanecen mientras viva el contenedor de la aplicación.
 
-### 3. Buenas prácticas y convenciones de código
+### 3. SOLID: cinco ideas para cambiar el código con menos problemas
 
-Reglas obligatorias de este proyecto:
+SOLID ayuda a repartir responsabilidades y a sustituir componentes sin romper lo que los utiliza. Cada letra representa una idea; no obliga a crear más capas o interfaces de las que necesitamos.
 
-- **Campos privados:** `_camelCase`, incluidos los campos `private readonly`.
-- **Interfaces:** prefijo `I` seguido de PascalCase. Son interfaces, no clases.
-- **Parámetros y variables locales:** camelCase sin `_`.
-- **Clases, métodos y propiedades:** PascalCase. El acceso se define con sus modificadores, no con el nombre.
+#### S — SRP: una responsabilidad principal por clase
+
+**Una clase hace un trabajo principal.** Si cambia la tarifa, modificamos el cálculo. Si cambia el formato del ticket, modificamos su impresión.
 
 ```csharp
-public interface ICalculadoraPrecio
+public class CalculadoraEntrada
 {
-    decimal Calcular(decimal precioBase);
+    public decimal Calcular(int edad) => edad < 18 ? 7m : 10m;
 }
 
-public class CalculadoraPrecio : ICalculadoraPrecio
+public class ImpresorTicket
 {
-    private readonly decimal _porcentaje;
-
-    public CalculadoraPrecio(decimal porcentaje)
+    public void Imprimir(decimal precio)
     {
-        _porcentaje = porcentaje;
-    }
-
-    public decimal Calcular(decimal precioBase)
-    {
-        var precioFinal = precioBase * (1 + _porcentaje);
-        return precioFinal;
+        System.Console.WriteLine($"Entrada: {precio} euros");
     }
 }
 ```
 
-`readonly` permite asignar el campo al declararlo o en el constructor. Si el campo guarda un objeto, impide reemplazar esa referencia después, pero no hace inmutable el contenido del objeto.
+El cálculo y la impresión están separados. `condición ? valor1 : valor2` elige el primer valor si la condición se cumple y el segundo si no.
 
-### 4. Principios SOLID
+#### O — OCP: añadir opciones sin reescribir lo que ya funciona
 
-**SOLID** reúne cinco principios para organizar el código y facilitar cambios y pruebas. Ayuda a evitar controladores que lo hacen todo, servicios demasiado grandes y dependencias difíciles de sustituir. Son criterios de diseño; no exigen crear una interfaz para cada clase.
-
-#### S — SRP: responsabilidad única
-
-**Una clase debe tener un motivo principal para cambiar.** Separar el cálculo de un impuesto de su impresión permite modificar uno sin tocar el otro.
+**Para añadir una tarifa, creamos otra clase que cumpla el contrato.** La taquilla puede usarla sin modificar su cálculo.
 
 ```csharp
-public class CalculadoraImpuesto
+public interface ITarifa
 {
-    public decimal Calcular(decimal importe) => importe * 0.21m;
+    decimal ObtenerPrecio();
 }
 
-public class ImpresorImporte
+public class TarifaNormal : ITarifa
 {
-    public void Imprimir(decimal importe) => System.Console.WriteLine(importe);
+    public decimal ObtenerPrecio() => 10m;
+}
+
+public class TarifaEstudiante : ITarifa
+{
+    public decimal ObtenerPrecio() => 8m;
+}
+
+public class Taquilla
+{
+    public decimal CalcularTotal(ITarifa tarifa, int cantidad)
+    {
+        return tarifa.ObtenerPrecio() * cantidad;
+    }
 }
 ```
 
-#### O — OCP: abierto a extensión, cerrado a modificación
+Con dos entradas, la tarifa normal devuelve **20** y la de estudiante, **16**. Podemos añadir `TarifaJubilado` sin cambiar `Taquilla`.
 
-**Añadir comportamientos sin reescribir el código estable que los usa.** Un descuento nuevo implementa el contrato; no necesita añadir otro `if` al cálculo del precio.
+#### L — LSP: cambiar una implementación sin romper la promesa
+
+**Si usamos un tipo base, cualquiera de sus tipos derivados debe cumplir lo que esperamos.** Una entrada de papel y una digital deben proporcionar un código válido.
 
 ```csharp
-public interface IDescuento
+Entrada entrada = new EntradaDigital();
+System.Console.WriteLine(entrada.ObtenerCodigo()); // CINE-002
+// Cambiar a new EntradaPapel() también devuelve un código válido.
+
+public abstract class Entrada
 {
-    decimal Aplicar(decimal precio);
+    public abstract string ObtenerCodigo();
 }
 
-public class DescuentoDiezPorCiento : IDescuento
+public class EntradaPapel : Entrada
 {
-    public decimal Aplicar(decimal precio) => precio * 0.90m;
+    public override string ObtenerCodigo() => "CINE-001";
 }
 
-public class PrecioFinal
+public class EntradaDigital : Entrada
 {
-    public decimal Calcular(decimal precio, IDescuento descuento) =>
-        descuento.Aplicar(precio);
+    public override string ObtenerCodigo() => "CINE-002";
 }
 ```
 
-#### L — LSP: sustitución de Liskov
+`abstract` declara lo que los tipos derivados deben implementar; `override` aporta su versión. Una entrada que no pueda entregar un código incumpliría este contrato.
 
-**Un tipo derivado debe poder sustituir al tipo base sin romper su comportamiento esperado.** No debe exigir condiciones adicionales ni dejar de realizar una operación prometida por el contrato.
+#### I — ISP: interfaces pequeñas con lo que cada componente necesita
+
+**Una impresora de tickets no tiene que saber leer entradas.** Separamos ambos contratos.
 
 ```csharp
-Notificador canal = new NotificadorSms();
-System.Console.WriteLine(canal.Preparar("Entrega lista"));
-// También funciona si usamos new NotificadorEmail().
-
-public abstract class Notificador
+public interface IImpresoraTickets
 {
-    public abstract string Preparar(string mensaje);
+    void Imprimir(string codigo);
 }
 
-public class NotificadorSms : Notificador
+public interface ILectorEntradas
 {
-    public override string Preparar(string mensaje) => $"SMS: {mensaje}";
+    bool Validar(string codigo);
 }
 
-public class NotificadorEmail : Notificador
+public class ImpresoraTickets : IImpresoraTickets
 {
-    public override string Preparar(string mensaje) => $"Email: {mensaje}";
+    public void Imprimir(string codigo)
+    {
+        System.Console.WriteLine($"Ticket: {codigo}");
+    }
 }
 ```
 
-Ambos preparan un mensaje. Una implementación que siempre lance «operación no soportada» rompería esa promesa.
+La impresora solo implementa la impresión. No necesita un método de validación que no sabe realizar.
 
-#### I — ISP: segregación de interfaces
+#### D — DIP: pedir una capacidad, no una clase concreta
 
-**Crear contratos pequeños para no obligar a implementar operaciones innecesarias.** Una impresora sencilla puede imprimir sin tener que implementar un escáner.
+**La venta pide que se entregue una entrada mediante un contrato.** Así podemos cambiar el modo de entrega sin reescribir la venta.
 
 ```csharp
-public interface IImprimible
+public interface IEntregaEntrada
 {
-    void Imprimir(string texto);
+    void Entregar(string codigo);
 }
 
-public interface IEscaneable
+public class EntregaConsola : IEntregaEntrada
 {
-    string Escanear();
+    public void Entregar(string codigo)
+    {
+        System.Console.WriteLine($"Entrada entregada: {codigo}");
+    }
 }
 
-public class ImpresoraSimple : IImprimible
+public class VentaEntrada
 {
-    public void Imprimir(string texto) => System.Console.WriteLine(texto);
+    private readonly IEntregaEntrada _entrega;
+
+    public VentaEntrada(IEntregaEntrada entrega)
+    {
+        _entrega = entrega;
+    }
+
+    public void Finalizar(string codigo)
+    {
+        _entrega.Entregar(codigo);
+    }
 }
 ```
 
-#### D — DIP: inversión de dependencias
+La consola simula la entrega. Podemos implementar el mismo contrato para entregar por correo o imprimir un ticket.
 
-**La lógica de negocio depende de contratos, y los detalles concretos implementan esos contratos.** Confirmar una compra no necesita saber si el aviso se escribe en consola o se envía por correo.
+**DIP** es decidir que `VentaEntrada` depende del contrato `IEntregaEntrada`. **DI** es entregarle un objeto que cumple ese contrato, como `EntregaConsola`, por el constructor.
 
-```csharp
-public interface IAvisos
-{
-    void Enviar(string mensaje);
-}
-
-public class AvisosConsola : IAvisos
-{
-    public void Enviar(string mensaje) => System.Console.WriteLine(mensaje);
-}
-
-public class ConfirmarCompra
-{
-    private readonly IAvisos _avisos;
-
-    public ConfirmarCompra(IAvisos avisos) => _avisos = avisos;
-
-    public void Ejecutar() => _avisos.Enviar("Compra confirmada");
-}
-```
-
-**DIP es el principio; DI es una forma de aplicarlo.** El constructor recibe la dependencia; el contenedor puede elegir la implementación registrada.
-
-Referencias: [Arquitectura por capas](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures), [Principios de arquitectura](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/architectural-principles), [Inyección de dependencias](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection) y [Ciclos de vida](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection/service-lifetimes).
+Referencias: [Arquitectura por capas](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures), [Inyección de dependencias](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection) y [Ciclos de vida](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection/service-lifetimes).
 
 ## 6\. 🔗 Datos, Serialización y Funcional
 
