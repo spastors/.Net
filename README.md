@@ -358,6 +358,13 @@ Las colecciones te permiten agrupar datos:
 
 ### `static`: un dato común o una función que llamas desde la clase
 
+**Para acceder a un miembro `static`, no necesitas crear una instancia de la clase con `new`.** Una instancia es un objeto creado a partir de una clase. Por ejemplo, puedes leer `Empleado.Empresa` directamente, sin crear antes un empleado.
+
+`static` puede aplicarse a campos, propiedades y métodos. Indica que pertenecen a la clase: los datos son comunes y los métodos se llaman usando su nombre.
+
+- **Datos compartidos:** información común a todos los objetos, como el nombre de la empresa.
+- **Funciones de utilidad:** operaciones que reciben datos y devuelven un resultado sin necesitar un objeto concreto, como convertir minutos en segundos.
+
 **Sin `static`, el dato pertenece a cada objeto. Con `static`, pertenece a la clase y se comparte.**
 
 **Ejemplo: los empleados de un cine.** Cada empleado tiene su nombre, pero todos trabajan para la misma empresa.
