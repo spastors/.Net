@@ -1,24 +1,25 @@
 # 📘 Guía de Iniciación a .NET (Backend)
 
 > **Resumen:** Notas técnicas sobre el ecosistema .NET, sintaxis moderna de C\# y patrones para desarrollo backend.
-> **Versión:** Referencia actualizada para .NET 10 LTS (Long Term Support) y C\# 14 (octubre de 2026).
+> **Versión:** Referencia para .NET 10 LTS (soporte largo) y C\# 14. Información revisada el 13-10-2026.
+> **Ejemplos:** cada bloque es independiente. Las instrucciones de consola se colocan en `Program.cs`; los fragmentos de métodos, dentro de su clase. Los controladores requieren un proyecto ASP.NET Core.
 
 ## 1. .NET Framework vs .NET moderno: diferencias e historia
 
 ### Vista rápida
 
 - **.NET Framework (2002):** plataforma original para Windows. Sigue existiendo para aplicaciones heredadas; versión 4.8.1.
-- **.NET Core (2016–2019):** rediseño abierto y multiplataforma. Versiones 1.0–3.1.
+- **.NET Core (2016-2019):** rediseño abierto y multiplataforma. Versiones 1.0–3.1.
 - **.NET (desde 2020):** continuación unificada de .NET Core. Para proyectos nuevos, es la opción habitual.
 
 | Versión | Dónde funciona | Qué la caracteriza | Soporte a octubre de 2026 / uso recomendado |
 |---|---|---|---|
 | **.NET Framework 4.8.1** | Windows | Plataforma original; usada por aplicaciones Windows, ASP.NET clásico y Web Forms. | Se mantiene según la versión de Windows. Elegirla para mantener sistemas existentes o dependencias que la requieran. |
 | **.NET 6** | Windows, Linux, macOS | Consolidó la plataforma multiplataforma e introdujo mejoras como Minimal APIs y Hot Reload. | Soporte terminado en noviembre de 2024. Migrar a una versión con soporte. |
-| **.NET 8** | Windows, Linux, macOS | Mejoras de rendimiento y publicación; incorporó C# 12. | LTS hasta el 10-11-2026. Muy presente en proyectos actuales; planificar actualización. |
+| **.NET 8** | Windows, Linux, macOS | Mejoras de rendimiento y publicación; incorporó C# 12. | LTS hasta el 10-11-2026. Muy presente en proyectos actuales; planificar la actualización de aplicaciones que lo utilicen. |
 | **.NET 10** | Windows, Linux, macOS | Versión moderna más reciente de esta tabla; continúa las mejoras de rendimiento y herramientas; usa C# 14. | LTS hasta el 14-11-2028. Recomendado para proyectos nuevos. |
 
-**LTS** significa soporte largo: 3 años de actualizaciones. **STS** significa soporte estándar: 2 años. Las versiones 6, 8 y 10 son LTS; el estado y las fechas cambian según la versión. Consulta la [política oficial de soporte de .NET](https://dotnet.microsoft.com/es-es/platform/support/policy/dotnet-core), las novedades de [.NET 6](https://learn.microsoft.com/es-es/dotnet/core/whats-new/dotnet-6), [.NET 8](https://learn.microsoft.com/es-es/dotnet/core/whats-new/dotnet-8/) y [.NET 10](https://learn.microsoft.com/es-es/dotnet/core/whats-new/dotnet-10), y el [ciclo de vida de .NET Framework](https://learn.microsoft.com/lifecycle/products/microsoft-net-framework).
+En la política actual, **LTS** significa soporte largo: 3 años de actualizaciones. **STS** significa soporte estándar: 2 años. Las versiones 6, 8 y 10 son LTS; el estado y las fechas cambian según la versión. Consulta la [política oficial de soporte de .NET](https://dotnet.microsoft.com/es-es/platform/support/policy/dotnet-core), las novedades de [.NET 6](https://learn.microsoft.com/es-es/dotnet/core/whats-new/dotnet-6), [.NET 8](https://learn.microsoft.com/es-es/dotnet/core/whats-new/dotnet-8/) y [.NET 10](https://learn.microsoft.com/es-es/dotnet/core/whats-new/dotnet-10), y el [ciclo de vida de .NET Framework](https://learn.microsoft.com/lifecycle/products/microsoft-net-framework).
 
 > **Respuesta de entrevista:** .NET Framework 4.8.1 es la línea antigua para Windows. .NET 6, 8 y 10 pertenecen a la línea moderna, que funciona en varios sistemas operativos y recibe mejoras por versión. La diferencia principal entre 6, 8 y 10 es su fecha, las funciones incorporadas y el plazo de soporte; hoy elegiría .NET 10 para un proyecto nuevo y actualizaría .NET 6 u 8 porque su soporte ya terminó o está por terminar.
 
@@ -33,7 +34,7 @@
 | Familia | Se ejecuta sobre | Sistemas | Uso |
 |---|---|---|---|
 | **ASP.NET clásico (4.x)** | .NET Framework | Windows | Aplicaciones existentes con Web Forms, MVC o Web API |
-| **ASP.NET Core 1–3.1** | Principalmente .NET Core | Windows, Linux, macOS | Primeras versiones de la línea moderna |
+| **ASP.NET Core 1–3.1** | .NET Core; algunas versiones iniciales también admitían .NET Framework | Windows, Linux, macOS con .NET Core; Windows con .NET Framework | Primeras versiones de la línea moderna |
 | **ASP.NET Core 5, 6, 8, 10…** | .NET moderno de la misma versión | Windows, Linux, macOS | Nuevas aplicaciones web y APIs |
 
 **ASP.NET Core conserva «Core» en su nombre**, aunque .NET dejó de llamarse «.NET Core» desde la versión 5. Ejemplo: .NET 10 + ASP.NET Core 10.
@@ -54,7 +55,7 @@ Referencias: [ASP.NET clásico](https://learn.microsoft.com/aspnet/overview) y [
 Para empezar a trabajar con el ecosistema moderno de Microsoft.
 
   * **SDK:** herramientas para crear y compilar proyectos .NET. Descarga una versión LTS (Long Term Support): [.NET Download](https://dotnet.microsoft.com/es-es/download/dotnet).
-  * **IDE Recomendado:** Visual Studio 2022 o 2026 (Community) o VS Code con la extensión **C\# Dev Kit**. [Visual Studio Download](https://visualstudio.microsoft.com/es/downloads/)
+  * **Editor:** para .NET 10, Visual Studio 2026 (18.0 o posterior) o VS Code con **C\# Dev Kit**. Visual Studio 2022 permite trabajar con versiones anteriores, como .NET 8. [Compatibilidad oficial](https://learn.microsoft.com/dotnet/core/porting/versioning-sdk-msbuild-vs).
 
 ### Comandos Esenciales (CLI)
 
@@ -63,7 +64,7 @@ La terminal es tu amiga en .NET Core/.NET 5+.
 ```bash
 dotnet --version            # Verificar instalación
 dotnet new list             # Ver plantillas disponibles
-dotnet new webapi -n MyApi  # Crear una API Web
+dotnet new webapi --use-controllers -n MyApi # Crear una API con controladores
 dotnet new console -n App   # Crear aplicación de consola
 dotnet run                  # Ejecutar proyecto
 dotnet build                # Compilar proyecto
@@ -77,7 +78,21 @@ C\# es un lenguaje **tipado**: cada variable tiene un tipo que determina qué va
 
 ### Fundamentos de Sintaxis y Control
 
-La estructura básica de un programa es: `using` (importar bibliotecas), `namespace` (agrupador lógico), `class` (plantilla de objeto) y el punto de entrada, que en las aplicaciones modernas de Consola o Web API es implícito (**Top-Level Statements**).
+Un programa C# combina instrucciones que realizan tareas y elementos que organizan el código. Para empezar a leerlo, conviene reconocer estos tres:
+
+- **`class` (clase):** define los datos y las operaciones de un tipo de objeto. Por ejemplo, una clase `Producto` puede tener un nombre y un método para actualizar su precio.
+- **`namespace` (espacio de nombres):** agrupa clases y otros tipos bajo un nombre común. Por ejemplo, `System` contiene tipos como `Console`.
+- **`using`:** permite utilizar esos tipos con su nombre corto. Con `using System;`, puedes escribir `Console` en lugar de `System.Console`.
+
+La aplicación necesita un **punto de entrada**: el lugar donde comienza a ejecutarse. Puede declararse con un método llamado `Main`. En las plantillas modernas de consola y Web API, suele bastar con escribir las instrucciones iniciales en `Program.cs`; el compilador crea ese método por ti. Esta forma se llama **instrucciones de nivel superior**.
+
+Por ejemplo, este programa empieza mostrando un mensaje en la consola:
+
+```csharp
+using System;
+
+Console.WriteLine("Programa iniciado");
+```
 
   * **Datos Primitivos:** Cubiertos en el *Cheatsheet* (ej: `int`, `bool`, `char`).
   * **Funciones/Métodos:** Bloques de código reutilizables.
@@ -97,10 +112,10 @@ int     entero      = 42;             // Estándar para contar (-2B
 long    gigante     = 9_000_000L;     // Entero de 64-bits (Nota el guion bajo y 'L')
 double  cientifico  = 3.14159;        // Punto flotante estándar (Impreciso para $)
 float   graficos    = 3.14f;          // Menor peso, usado en Unity/Juegos ('f')
-decimal dinero      = 100.50m;        // ¡CRÍTICO! Alta precisión para finanzas ('m')
+decimal dinero      = 100.50m;        // Habitual para importes; representa decimales como 0.1m
 
 // 2. TEXTO (STRINGS)
-char    letra       = 'A';            // Comillas simples, solo 1 carácter
+char    letra       = 'A';            // Una unidad UTF-16; algunos símbolos necesitan dos char
 string  texto       = "Hola Mundo";   // Comillas dobles estándar
 string  json        = """             
                       {
@@ -109,15 +124,15 @@ string  json        = """             
                       """;            // Raw String Literal (C# 11+): Ideal para JSON/XML multilínea
 
 // 3. LÓGICA (BOOLEAN)
-bool    esValido    = true;           // Ocupa 1 byte (teóricamente 1 byte)
+bool    esValido    = true;           // true o false; sizeof(bool) = 1 byte
 
 // 4. FECHAS (DATES - MODERN .NET)
-DateTime fechaHora  = DateTime.Now;             // 2025-10-05 14:30:00 (Pesado)
-DateOnly soloFecha  = new DateOnly(2025,10,5);  // 2025-10-05 (Ligero - Recomendado si no usas hora)
-TimeOnly soloHora   = new TimeOnly(14,30);      // 14:30 (Ligero)
+DateTime fechaHora  = DateTime.Now;             // Fecha y hora actual local: 2025-10-05 14:30:00
+DateOnly soloFecha  = new DateOnly(2025,10,5);  // Solo fecha, sin hora: 2025-10-05
+TimeOnly soloHora   = new TimeOnly(14,30);      // Solo hora, sin fecha: 14:30
 
 // 5. IDENTIFICADORES & BYTES
-Guid    idUnico     = Guid.NewGuid(); // a1b2c3d4-e5f6... (Ideal para Primary Keys)
+Guid    idUnico     = Guid.NewGuid(); // Identificador de 128 bits; útil entre varios sistemas. Útil para Primary Keys: a1b2c3d4-e5f6...
 byte    unByte      = 255;            // De 0 a 255 (Para manipulación de archivos/imágenes)
 ```
 
@@ -126,7 +141,7 @@ byte    unByte      = 255;            // De 0 a 255 (Para manipulaci�
 Esta es una pregunta clásica de entrevista.
 
   * **`var`**: Inferencia estática en **tiempo de compilación**. El tipo queda fijado y no cambia; no equivale a `dynamic`.
-  * **`const`**: Valor inmutable. Debe asignarse al declararse.
+  * **`const`**: Valor fijo (inmutable) conocido en compilación. Se asigna al declararlo y no puede reasignarse.
   * **`dynamic`**: El tipo se comprueba mientras el programa se ejecuta. El compilador no puede detectar algunos errores antes; úsalo cuando sea necesario.
 
 <!-- end list -->
@@ -148,7 +163,7 @@ datos = 10; // Esto es válido en dynamic, pero daría error en var
 | C# `var` | JavaScript `var` |
 |---|---|
 | El compilador infiere un tipo estático una vez | Puede contener valores de tipos distintos |
-| Solo variable local con inicializador | Puede declararse sin inicializar; tiene alcance de función |
+| Solo variable local con inicializador | Puede declararse sin inicializar; tiene alcance de función o global |
 | `var x = 1; x = "a";` no compila | `var x = 1; x = "a";` es válido |
 
 En JavaScript moderno suele preferirse `let` o `const`, cuyo alcance es de bloque.
@@ -234,11 +249,6 @@ No hay dos documentos: hay **uno solo compartido**.
 ##### ✅ Ejemplo simple en C#
 
 ```csharp
-public class Cuenta
-{
-    public int Saldo;
-}
-
 var cuenta1 = new Cuenta { Saldo = 100 };
 var cuenta2 = cuenta1; // Se copia la REFERENCIA
 
@@ -246,6 +256,11 @@ cuenta2.Saldo = 500;
 
 Console.WriteLine(cuenta1.Saldo); // 500 ✅ ¡Cambia también!
 Console.WriteLine(cuenta2.Saldo); // 500
+
+public class Cuenta
+{
+    public int Saldo;
+}
 ```
 
 #### 📊 Comparativa
@@ -259,29 +274,38 @@ Console.WriteLine(cuenta2.Saldo); // 500
 | Analogía de ubicación | Una hoja dentro de una carpeta o sobre el escritorio: depende del contenedor | Un documento en un archivador; la variable conserva cómo encontrarlo |
 | Ejemplos | `int`, `bool`, `decimal`, `struct` | `class`, arrays, `List<T>` |
 
+Copiar un `struct` copia sus campos: si alguno contiene una referencia, el objeto apuntado puede seguir compartido. Reasignar una variable de referencia para que apunte a otro objeto tampoco cambia la otra variable.
+
+Referencia: [Tipos de valor y copia de referencias](https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/value-types).
+
 ## 4\. 🧬 Programación Orientada a Objetos (POO)
 
 ### ✍️ Convenciones de Nomenclatura (Estándar C\#)
 
-Seguir estas convenciones de estilo es crucial para el *Clean Code* y la consistencia en proyectos .NET:
+Seguir estas convenciones de estilo es importante para mantener *Clean Code* y la consistencia en proyectos .NET:
 
-| Elemento | Convención | Estilo | Ejemplo | Acceso Sugerido |
-| :--- | :--- | :--- | :--- | :--- |
-| **Clases, Métodos, Propiedades, Namespaces** | **PascalCase** | `Public Name` | `public string NombreUsuario { get; set; }` | `public` |
-| **Parámetros de Métodos, Variables Locales** | **camelCase** | `private name` | `void Proceso(int idUsuario)` | `var` / local |
-| **Campos Privados (Fields), incluidos los `readonly`** | **\_camelCase** | `private _name` | `private int _stockMinimo;` | `private` |
-| **Interfaces** | **Prefijo I + PascalCase** | `Interface Name` | `public interface IRepositorio;` | `public` |
+| Elemento | Convención | Ejemplo de nombre |
+|---|---|---|
+| Clases, métodos, propiedades y namespaces | PascalCase: cada palabra empieza con mayúscula | `EntradaService`, `CalcularPrecio` |
+| Parámetros y variables locales | camelCase: primera palabra con minúscula | `edad`, `precioFinal` |
+| Campos privados, incluidos los `readonly` | Guion bajo + camelCase | `_entradaService` |
+| Interfaces | Prefijo `I` + PascalCase | `IEntradaService` |
+
+El nombre no determina el acceso: `public`, `private` y `protected` se declaran aparte.
 
 ### Anatomía de una Clase Típica
 
 Una **clase** es la plantilla para crear objetos.
 
-  * **Creación de Objeto:** A diferencia de JavaScript, donde a veces puedes omitir `new`, en C\# la instancia de una clase siempre requiere **`new`** (excepto en Inyección de dependencias (DI)
-). `var object = new Class();`
+  * **Creación de objeto:** puedes crearlo con `var object = new Class();` o recibir uno creado por otro componente. Con DI, el contenedor crea o reutiliza las dependencias y te las entrega.
 
 <!-- end list -->
 
 ```csharp
+// Uso:
+var lapiz = new Producto("Lápiz HB");
+lapiz.AñadirStock(10);
+
 public class Producto
 {
     // 1. Campo (Field) Variable interna de la clase, típicamente privada con convención _camelCase
@@ -302,14 +326,10 @@ public class Producto
     {
         // Lógica de negocio
         if (cantidad < 0) return;
-        
+
         Console.WriteLine($"Añadiendo {cantidad} unidades a {Nombre}.");
     }
 }
-
-// Uso:
-var lapiz = new Producto("Lápiz HB"); 
-lapiz.AñadirStock(10);
 ```
 
 ### `static`: un dato común o una función que llamas desde la clase
@@ -378,26 +398,32 @@ No necesitamos crear `new Tiempo()`: entregamos los minutos y obtenemos los segu
 
 | Modificador | Acceso | Descripción |
 | :--- | :--- | :--- |
-| **`public`** | Ilimitado | Accesible desde cualquier parte del código. |
+| **`public`** | Público | Accesible desde donde pueda utilizarse la clase que contiene el miembro. |
 | **`private`** | Limitado | Solo accesible **dentro de la misma clase**. (Recomendado para campos internos). |
 | **`protected`** | Limitado | Accesible dentro de la misma clase y por las **clases hijas (heredadas)**. |
 
 #### Ejemplos de Modificadores de Acceso
 
 ```csharp
+// Uso desde fuera de las clases:
+var cuenta = new CuentaBancaria();
+cuenta.NumeroCuenta = "12345";       // ✅ OK: Es public
+// cuenta._saldo = 500m;             // ❌ Error: Es private
+// decimal interes = cuenta.Interes; // ❌ Error: Es protected
+
 public class CuentaBancaria
 {
     // 1. private: Solo accesible dentro de esta clase (Encapsulación).
-    private decimal _saldo = 1000m; 
+    private decimal _saldo = 1000m;
 
     // 2. protected: Accesible aquí y en clases que hereden de CuentaBancaria.
-    protected decimal Interes = 0.05m; 
+    protected decimal Interes = 0.05m;
 
     // 3. public: Accesible desde cualquier lugar.
-    public string NumeroCuenta { get; set; }
+    public string NumeroCuenta { get; set; } = "";
 
     // Método público que interactúa con el campo privado
-    public decimal ObtenerSaldo() 
+    public decimal ObtenerSaldo()
     {
         return _saldo;
     }
@@ -409,17 +435,11 @@ public class CuentaAhorro : CuentaBancaria
     {
         // ✅ Acceso permitido a 'protected' (Interes), porque es una clase hija.
         decimal nuevoInteres = this.ObtenerSaldo() * this.Interes;
-        
+
         // ❌ Error de compilación si intentamos acceder a '_saldo' directamente,
         // porque '_saldo' es 'private' en la clase base.
     }
 }
-
-// Uso desde fuera de las clases:
-var cuenta = new CuentaBancaria();
-cuenta.NumeroCuenta = "12345";       // ✅ OK: Es public
-// cuenta._saldo = 500m;             // ❌ Error: Es private
-// decimal interes = cuenta.Interes; // ❌ Error: Es protected
 ```
 
 ### Sobrecarga de Métodos (Overloading)
@@ -431,31 +451,31 @@ La sobrecarga permite definir **múltiples métodos con el mismo nombre** dentro
 #### Ejemplo de Sobrecarga
 
 ```csharp
+// Uso: El compilador elige automáticamente qué método usar
+var calc = new Calculadora();
+var resultadoInt = calc.Sumar(5, 10);        // Llama a Sobrecarga 1
+var resultadoDecimal = calc.Sumar(5.5m, 10m);  // Llama a Sobrecarga 3
+
 public class Calculadora
 {
     // Sobrecarga 1: Suma de dos enteros
-    public int Sumar(int a, int b) 
+    public int Sumar(int a, int b)
     {
         return a + b;
     }
 
     // Sobrecarga 2: Suma de tres enteros (diferente número de parámetros)
-    public int Sumar(int a, int b, int c) 
+    public int Sumar(int a, int b, int c)
     {
         return a + b + c;
     }
 
     // Sobrecarga 3: Suma de dos decimales (diferente tipo de parámetros)
-    public decimal Sumar(decimal a, decimal b) 
+    public decimal Sumar(decimal a, decimal b)
     {
         return a + b;
     }
 }
-
-// Uso: El compilador elige automáticamente qué método usar
-var calc = new Calculadora();
-var resultadoInt = calc.Sumar(5, 10);        // Llama a Sobrecarga 1
-var resultadoDecimal = calc.Sumar(5.5m, 10m);  // Llama a Sobrecarga 3
 ```
 
 ### Clases y Herencia: `virtual` vs `override`
@@ -472,38 +492,38 @@ La **Herencia** permite que una clase hija adquiera las propiedades y métodos d
 #### Ejemplo de Código:
 
 ```csharp
-public class Empleado
-{
-    // Este método es virtual, la clase hija PUEDE cambiarlo.
-    public virtual string CalcularSalario() 
-    {
-        return "Salario base según contrato.";
-    }
-}
-
-public class Manager : Empleado 
-{
-    // Usamos override para cambiar el comportamiento del padre.
-    public override string CalcularSalario() 
-    {
-        return base.CalcularSalario() + " Más bonificación por objetivos.";
-        // 'base' llama a la implementación original del padre.
-    }
-}
-
 // Uso:
 Empleado e = new Empleado();
 Manager m = new Manager();
 
 Console.WriteLine(e.CalcularSalario()); // Salario base según contrato.
 Console.WriteLine(m.CalcularSalario()); // Salario base según contrato. Más bonificación...
+
+public class Empleado
+{
+    // Este método es virtual, la clase hija PUEDE cambiarlo.
+    public virtual string CalcularSalario()
+    {
+        return "Salario base según contrato.";
+    }
+}
+
+public class Manager : Empleado
+{
+    // Usamos override para cambiar el comportamiento del padre.
+    public override string CalcularSalario()
+    {
+        return base.CalcularSalario() + " Más bonificación por objetivos.";
+        // 'base' llama a la implementación original del padre.
+    }
+}
 ```
 
 ### Interfaces
 
-Definen un **contrato**. Una interfaz solo contiene las firmas de los métodos, propiedades, o eventos, pero **no su implementación**. La clase que implementa la interfaz *debe* proporcionar el código para esos miembros.
+Definen un **contrato**: qué operaciones ofrece un componente. En estos ejemplos, la interfaz declara las operaciones y la clase aporta el código. C# moderno también permite implementaciones predeterminadas en interfaces.
 
-> **Importancia en Backend:** Las interfaces son vitales para la **Inyección de Dependencias (DI)**, ya que permiten trabajar con el *contrato* (`IProducto`) en lugar de la *implementación concreta* (`ProductoServicio`), facilitando los *mocks* en pruebas unitarias.
+> **Importancia en Backend:** facilitan cambiar implementaciones y probar componentes con objetos que simulan sus dependencias. DI también puede inyectar clases concretas; una interfaz ayuda a depender de su contrato.
 
 ```csharp
 public interface IGuardable
@@ -521,18 +541,20 @@ public class RepositorioSql : IGuardable
     }
 }
 ```
+Referencias: [Interfaces](https://learn.microsoft.com/dotnet/csharp/fundamentals/types/interfaces) e [instrucciones de nivel superior](https://learn.microsoft.com/dotnet/csharp/fundamentals/program-structure/top-level-statements).
+
 ## 5\. 🔍 Generics y Colecciones
 
 Los **Genéricos (`<T>`)** nos permiten escribir código reutilizable y seguro sin especificar el tipo de dato exacto hasta el momento de usarlo.
 
-> **¿Por qué usarlos?** Evitan el "Boxing/Unboxing" (coste de rendimiento) y garantizan que no metas un `int` en una lista de `string` (seguridad de tipos).
+> **¿Por qué usarlos?** El compilador comprueba los tipos: `List<string>` no acepta enteros. `List<int>` evita convertir cada entero en `object` (**boxing**, una conversión que puede crear un objeto adicional). Los genéricos no evitan todas las conversiones: `List<object>` sí hace boxing al guardar un `int`.
 
 ```csharp
 // Lista genérica: Solo acepta enteros
 List<int> numeros = new List<int>(); 
 
 // Método genérico
-public T DevolverElemento<T>(T elemento)
+T DevolverElemento<T>(T elemento)
 {
     return elemento;
 }
@@ -545,8 +567,10 @@ Las colecciones te permiten agrupar datos:
   * **`array`:** Colección de tamaño fijo y del mismo tipo. `int[] numeros = new int[5];`
   * **`List<T>`:** Colección dinámica (genérica) del mismo tipo.
   * **`Dictionary<TKey, TValue>`:** Colección de pares clave-valor (genérica).
-  * **`HashSet<T>`:** Colección sin orden y que garantiza que **no hay duplicados**.
-  * **`Tuple`:** Tipo de valor que permite agrupar varios elementos relacionados de diferentes tipos. `(int id, string name) user = (1, "Anna");`
+  * **`HashSet<T>`:** Colección sin orden garantizado; no admite duplicados según su comparación de igualdad.
+  * **Tupla de valor (`ValueTuple`):** Agrupa varios datos: `(int id, string nombre) usuario = (1, "Ana");`. Esta sintaxis crea un tipo de valor; `System.Tuple<...>` es una clase.
+
+Referencias: [Tuplas de valor](https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/value-tuples) y [boxing](https://learn.microsoft.com/dotnet/csharp/programming-guide/types/boxing-and-unboxing).
 
 ## 6. Delegados y programación funcional
 
@@ -558,13 +582,13 @@ Las colecciones te permiten agrupar datos:
 
 Delegado que **NO retorna valor** (void).
 
-  * *Uso:* Cuando quieres ejecutar algo (un log, una notificación) sin esperar respuesta.
+  * *Uso:* Ejecutar una operación, como escribir un log, que no devuelve un valor. La llamada normal espera a que termine; `Action` no implica asincronía.
 
 <!-- end list -->
 
 ```csharp
 // Recibe un string, no devuelve nada
-void ProcesarDatos(Action<string> fnCallback, string mensaje) 
+void ProcesarDatos(Action<string> fnCallback, string mensaje)
 {
     Console.WriteLine("Inicio del proceso...");
     fnCallback(mensaje); // Ejecutamos la función que nos pasaron
@@ -604,7 +628,7 @@ Es la sintaxis concisa para crear delegados (`Action` o `Func`) en línea.
 
 ```csharp
 // Lógica que recibe string y devuelve string (Func)
-Func<string, string> aMayusculas = (texto) => texto.ToUpper(); 
+Func<string, string> aMayusculas = (texto) => texto.ToUpper();
 
 // Lógica que recibe string y no devuelve nada (Action)
 Action<string> logger = (msg) => Console.WriteLine($"LOG: {msg}");
@@ -630,7 +654,7 @@ LINQ suele usar **evaluación diferida**: espera hasta que el programa recorre l
 
 ## 7\. 📊 LINQ (Language Integrated Query)
 
-La herramienta más potente de .NET para manipular datos (Arrays, Listas, Bases de Datos).
+LINQ permite consultar y transformar datos de arrays y colecciones. Con un proveedor, como EF Core, algunas consultas pueden traducirse para ejecutarse en una base de datos.
 
 Existen dos sintaxis:
 
@@ -647,8 +671,7 @@ var mayoresDeCinco = numeros.Where(n => n > 5).ToList();
 
 // 2. Query Syntax
 var query = from n in numeros
-            where n > 5 && n < 10
-            order by n
+            where n > 5
             select n;
 ```
 
@@ -733,7 +756,7 @@ Referencia: [APIs con controladores en ASP.NET Core](https://learn.microsoft.com
 
 **El nombre del método C# no se añade automáticamente a la URL.** En el ejemplo anterior, `Obtener` atiende `GET /api/productos/5`: la dirección sale de `[Route("api/productos")]` + `[HttpGet("{id}")]`. Puedes renombrarlo y esa ruta seguirá igual.
 
-Los **tokens** son marcadores que ASP.NET Core sustituye al preparar las rutas. Ahorran escribir nombres repetidos:
+Los **tokens** `[controller]` y `[action]` se sustituyen al preparar las rutas y ahorran escribir nombres repetidos. `{id}` es distinto: un parámetro cuyo valor llega en cada petición.
 
 | Marcador | Se sustituye por | Ejemplo |
 |---|---|---|
@@ -775,11 +798,11 @@ Es el proceso de **convertir un objeto C\#** (como una instancia de una clase) *
   * **Serialización:** `Objeto C#` $\rightarrow$ `JSON/XML` (Para enviar datos a un cliente).
   * **Deserialización:** `JSON/XML` $\rightarrow$ `Objeto C#` (Para recibir datos del cliente).
 
-La biblioteca estándar para esto en .NET es **`System.Text.Json`**.
+Para JSON, .NET incluye **`System.Text.Json`**. XML utiliza otras bibliotecas, como `System.Xml.Serialization`.
 
 ```csharp
 // Serialización a JSON
-var producto = new Producto("Teclado");
+var producto = new { Nombre = "Teclado" };
 string json = System.Text.Json.JsonSerializer.Serialize(producto);
 // Output: {"Nombre":"Teclado"}
 ```
@@ -1101,7 +1124,7 @@ builder.Services.AddScoped<IEntradaService, EntradaService>();
 - **Singleton:** se comparte entre usuarios. No guardar ahí la edad, la compra o el carrito de un usuario.
 - No guardar un servicio scoped dentro de un singleton: el singleton puede seguir vivo después de terminar esa petición.
 - Si varias peticiones modifican un objeto compartido, puede haber conflictos. El registro DI no evita esos conflictos.
-- Al terminar una petición, el contenedor libera los recursos de sus servicios scoped que lo requieren. La memoria se recupera cuando los objetos dejan de usarse y actúa el recolector de basura. Los singleton permanecen mientras viva el contenedor de la aplicación.
+- Al terminar una petición, el contenedor libera los recursos de los servicios scoped y transient desechables que ha creado dentro de ese ámbito. La memoria se recupera cuando los objetos dejan de usarse y actúa el recolector de basura. Los singleton permanecen mientras viva el contenedor de la aplicación.
 
 ### 3. SOLID: cinco ideas para cambiar el código con menos problemas
 
@@ -1109,7 +1132,7 @@ SOLID ayuda a repartir responsabilidades y a sustituir componentes sin romper lo
 
 #### S — SRP: una responsabilidad principal por clase
 
-**Una clase hace un trabajo principal.** Si cambia la tarifa, modificamos el cálculo. Si cambia el formato del ticket, modificamos su impresión.
+**Una clase tiene una responsabilidad principal y un motivo principal para cambiar.** Si cambia la tarifa, modificamos el cálculo. Si cambia el formato del ticket, modificamos su impresión.
 
 ```csharp
 public class CalculadoraEntrada
@@ -1254,11 +1277,13 @@ Referencias: [Arquitectura por capas](https://learn.microsoft.com/dotnet/archite
 
 ## 10\. 🌐 Instalación y verificación de IIS (Internet Information Services)
 
-IIS es el servidor web de Microsoft integrado en Windows. Para utilizarlo, primero hay que habilitarlo como una característica del sistema operativo.
+IIS es un servidor web de Microsoft para Windows. Su disponibilidad depende de la edición del sistema. Los pasos siguientes corresponden a Windows de escritorio; en Windows Server se añade el rol **Servidor web (IIS)**.
+
+ASP.NET Core puede ejecutarse localmente con `dotnet run` y su servidor Kestrel, sin IIS. Para alojarlo en IIS, instala también el **.NET Hosting Bundle**, que aporta el módulo de integración y los runtimes necesarios. [Guía oficial de publicación en IIS](https://learn.microsoft.com/aspnet/core/tutorials/publish-to-iis).
 
 ### 1. Instalación de IIS
 
-Siga estos pasos para activar IIS en Windows:
+Con permisos de administrador, sigue estos pasos para activar IIS en Windows:
 
 1. Abra el **Panel de control**.
 2. Acceda a **Programas > Programas y características**.
@@ -1285,7 +1310,7 @@ Para comprobar que IIS se ha instalado correctamente y que el servidor web está
 
 3. Pulse **Enter**.
 
-Si todo funciona correctamente, aparecerá la página de bienvenida predeterminada de IIS, lo que indica que el servidor web está activo en el equipo local.
+Si el sitio predeterminado de IIS está iniciado y escucha en el puerto 80, aparecerá su página de bienvenida. Esto comprueba IIS; no significa que ya hayas publicado una API ASP.NET Core.
 
 <img width="601" height="315" alt="image" src="https://github.com/user-attachments/assets/e7b73186-1a2c-4325-8ed8-f27a3a39c728" />
 
