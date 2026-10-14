@@ -1,0 +1,7 @@
+Edit the supplied Spanish EF Core infographic. Preserve all text, code, colors, typography, six cards and footer. Correct the sequential layout and the database table accuracy.
+Arrange the six cards in a serpentine reading order, with their current numbers and content intact:
+top row 1 on left, 2 on right;
+middle row 4 (migration generation) on left, 3 (context code) on right;
+bottom row 5 on left, 6 on right.
+Draw exactly these sequence arrows: 1→2 right, 2→3 down, 3→4 left, 4→5 down, 5→6 right. There must be no other sequence arrow.
+In card5, show the newly created "Libros" table with column headings "Id" and "Titulo" but ZERO data rows. Instead a label "Tabla vacía". The book is inserted only by card6 SaveChangesAsync. Everything else must remain identical and all code stays accurate.

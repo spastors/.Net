@@ -1,0 +1,12 @@
+Use case: infographic-diagram
+Asset type: Spanish educational infographic for a .NET README.
+Create a polished, extremely readable landscape infographic, white background, dark navy headings, teal blue and amber accents, simple flat icons, generous spacing. No branding or watermarks.
+Title verbatim: "EF Core: de C# a la base de datos"
+Subtitle: "ORM = puente entre objetos y tablas"
+Three large connected panels left to right:
+1 "Tu aplicación · C#" with an object card "Album" and fields "Id: 1", "Titulo: Jazz de medianoche", "CosteLicencia: 25".
+2 "Entity Framework Core" with stacked labels "DbContext: acceso a la base", "DbSet<Album>: consultar y guardar", "LINQ → SQL".
+3 "Base de datos · SQLite" with a simple table titled "Albums" columns "Id", "Titulo", "CosteLicencia", row "1", "Jazz de medianoche", "25".
+Two distinct arrows show "Consultar" from C# through EF to database and "Datos → objetos" from database through EF back to C#. Below a separate writing flow labeled "Guardar": exact code "db.Albums.Add(album);" then arrow exact code "await db.SaveChangesAsync();" then arrow "INSERT en la tabla". Footnote "Add prepara el cambio; SaveChangesAsync lo guarda."
+Bottom strip "DTO: eliges qué enviar al cliente" with small card "AlbumResumenDto" containing only "Id" and "Titulo"; annotate "La tabla conserva todos sus campos".
+Do not suggest DTO stored in table, EF calling remote HTTP APIs or Add immediately inserts. Render all text accurately, code monospace.

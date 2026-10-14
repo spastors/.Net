@@ -572,7 +572,86 @@ Las colecciones te permiten agrupar datos:
 
 Referencias: [Tuplas de valor](https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/value-tuples) y [boxing](https://learn.microsoft.com/dotnet/csharp/programming-guide/types/boxing-and-unboxing).
 
-## 6. Delegados y programación funcional
+## 6. Métodos, delegados y programación funcional
+
+### Métodos síncronos y asíncronos: esperar sin bloquear
+
+**Un método síncrono termina su trabajo antes de devolver el control. Un método asíncrono puede devolver una tarea mientras espera una operación pendiente.**
+
+Un **hilo** es quien ejecuta las instrucciones del programa. Si lo bloqueamos esperando un archivo o una respuesta de red, no puede hacer otro trabajo durante esa espera.
+
+**Analogía:** preparas un café. Puedes quedarte mirando la cafetera hasta que termine, o preparar las tostadas mientras esperas. El café tarda lo mismo; cambia cómo aprovechas la espera.
+
+| Forma | Qué ocurre al llamar al método | Mientras espera |
+|---|---|---|
+| **Síncrono** | Obtienes el resultado cuando termina | Si la espera es bloqueante, ocupa el hilo |
+| **Asíncrono** | Obtienes un `Task` que representa la operación | Con `await` sobre una operación pendiente, el método se pausa sin bloquear el hilo |
+
+#### Ejemplo síncrono
+
+Simulamos que la cafetera necesita un segundo. `Thread.Sleep` bloquea el hilo durante ese tiempo:
+
+```csharp
+using System;
+using System.Threading;
+
+string cafe = PrepararCafe();
+Console.WriteLine(cafe);
+Console.WriteLine("Ahora preparo las tostadas");
+
+string PrepararCafe()
+{
+    Thread.Sleep(1000);
+    return "Café listo";
+}
+```
+
+Las tostadas se anuncian **después** de que esté listo el café.
+
+#### Ejemplo asíncrono
+
+`Task.Delay` representa una espera sin bloquear el hilo. Lo usamos para simular ese mismo segundo:
+
+```csharp
+using System;
+using System.Threading.Tasks;
+
+Task<string> tareaCafe = PrepararCafeAsync();
+Console.WriteLine("Mientras tanto, preparo las tostadas");
+
+string cafe = await tareaCafe;
+Console.WriteLine(cafe);
+
+async Task<string> PrepararCafeAsync()
+{
+    await Task.Delay(1000);
+    return "Café listo";
+}
+```
+
+El mensaje de las tostadas aparece **antes** del mensaje «Café listo». Se ejecuta entre la llamada al método y `await tareaCafe`. El código situado después de ese `await` necesita el resultado y continúa cuando la tarea termina.
+
+#### Qué significan `Task`, `async` y `await`
+
+| Elemento | Significado | En el ejemplo |
+|---|---|---|
+| `Task` | Representa una operación y permite conocer cuándo termina; puede completarse correctamente, fallar o cancelarse | `Task.Delay(1000)` no produce un valor |
+| `Task<T>` | Una tarea que produce un resultado de tipo `T` | `Task<string>` produce el texto del café |
+| `async` | Permite usar `await` dentro del método; el compilador prepara cómo pausarlo y continuarlo | `async Task<string> PrepararCafeAsync()` |
+| `await` | Espera la finalización de una tarea sin bloquear el hilo y obtiene su resultado, si lo tiene | `await tareaCafe` entrega un `string` |
+
+Dentro de `PrepararCafeAsync` escribimos `return "Café listo"`. Aunque el método devuelve `Task<string>`, devolvemos el texto: el compilador lo coloca como resultado de la tarea.
+
+#### Cuándo usarlo y qué recordar
+
+- Usa APIs asíncronas para esperas de archivos, red o base de datos, como `ReadAllTextAsync`, `GetStringAsync` o `ToListAsync` de EF Core.
+- `async` no crea un hilo nuevo ni hace que un cálculo tarde menos. El método empieza ejecutándose normalmente hasta encontrar un `await` cuya operación todavía no ha terminado.
+- Si la tarea ya está completada, `await` obtiene el resultado y continúa sin pausar el método.
+- Para esperar tareas, utiliza `await`; `.Result` y `.Wait()` bloquean el hilo y pueden provocar problemas de bloqueo.
+- Usa el sufijo `Async` para reconocer métodos asíncronos. Normalmente devuelven `Task` o `Task<T>`; `async void` se reserva para manejadores de eventos.
+- En una Web API, la espera asíncrona permite que el servidor aproveche el hilo para atender otras peticiones mientras llega el resultado.
+
+Referencias: [Programación asíncrona](https://learn.microsoft.com/dotnet/csharp/asynchronous-programming/task-asynchronous-programming-model), [Task y tipos de retorno](https://learn.microsoft.com/dotnet/csharp/asynchronous-programming/async-return-types) y [casos de uso](https://learn.microsoft.com/dotnet/csharp/asynchronous-programming/async-scenarios).
 
 ### 🚀 Funciones de Primera Clase y Delegados (Callbacks)
 
@@ -1275,7 +1354,565 @@ La consola simula la entrega. Podemos implementar el mismo contrato para entrega
 
 Referencias: [Arquitectura por capas](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures), [Inyección de dependencias](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection) y [Ciclos de vida](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection/service-lifetimes).
 
-## 10\. 🌐 Instalación y verificación de IIS (Internet Information Services)
+## 10. Acceso a datos: entidades, DTO, EF Core y APIs externas
+
+### Entidad y DTO: guardar datos y transportar datos
+
+Un **modelo** es una clase que representa información. Una **entidad de base de datos** es un modelo que EF Core relaciona con datos almacenados, normalmente en una tabla.
+
+Un **DTO** (*Data Transfer Object*, objeto para transferir datos) define qué información entra o sale de una operación. No tiene que ser una copia exacta de la entidad: puede omitir campos, cambiar nombres o combinar información.
+
+**Ejemplo: un catálogo de álbumes.** Guardamos el coste de licencia, pero el usuario solo necesita el identificador y el título.
+
+| Clase | Para qué sirve | Campos |
+|---|---|---|
+| `Album` | Guardar datos en la base de datos | `Id`, `Titulo`, `CosteLicencia` |
+| `AlbumResumenDto` | Devolver el resumen al cliente | `Id`, `Titulo` |
+
+```csharp
+// Album.cs: entidad de base de datos.
+public class Album
+{
+    public int Id { get; set; }
+    public string Titulo { get; set; } = "";
+    public decimal CosteLicencia { get; set; }
+}
+
+// AlbumResumenDto.cs: datos que queremos devolver.
+public class AlbumResumenDto
+{
+    public int Id { get; set; }
+    public string Titulo { get; set; } = "";
+}
+```
+
+**Analogía:** la entidad es la ficha interna completa del álbum; el DTO es la ficha que entregamos al usuario.
+
+- Puedes reducir el DTO a los campos que necesita cada pantalla u operación.
+- El DTO no cambia la tabla ni elimina campos de la entidad.
+- Para recibir datos, también puedes definir otro DTO con los campos que el cliente tiene permitido enviar. Por ejemplo, no incluir `CosteLicencia` en una petición pública.
+- Usar un DTO no sustituye la validación de datos ni los permisos.
+
+### ¿Conviene explicarlo junto a Entity Framework?
+
+**Sí, como parte del acceso a datos, manteniendo clara la función de cada pieza:**
+
+| Pieza | Trabajo |
+|---|---|
+| **EF Core** | Consultar y guardar datos en una base de datos |
+| **Entidad** | Representar los datos que EF Core relaciona con la base de datos |
+| **DTO** | Representar los datos que transferimos al cliente o recibimos de otra API |
+| **HttpClient** | Enviar peticiones HTTP a una API externa |
+
+Los DTO también se usan sin EF Core. Una respuesta JSON de una URL puede convertirse directamente en un DTO.
+
+### Entity Framework Core: qué es un ORM
+
+**Entity Framework Core (EF Core)** permite consultar y guardar datos usando clases C# y LINQ. Es un **ORM** (*Object-Relational Mapper*): relaciona objetos con tablas de una base de datos relacional.
+
+**Analogía:** EF Core hace de intérprete entre tus objetos C# y la base de datos.
+
+| En C# | En la base de datos |
+|---|---|
+| Entidad `Album` | Tabla `Albums` |
+| Propiedad `Titulo` | Columna `Titulo` |
+| Un objeto `Album` | Una fila |
+| Consulta LINQ | Consulta SQL, cuando EF puede traducirla |
+
+![EF Core: objetos, contexto, tablas y DTO](docs/images/ef-core-orm.png)
+
+- `DbContext`: coordina consultas y cambios; representa una sesión de trabajo con la base de datos.
+- `DbSet<Album>`: permite consultar y preparar cambios de entidades `Album`.
+- `Add`, `Update` y `Remove`: preparan cambios; `SaveChangesAsync()` los envía a la base de datos.
+- **Seguimiento de cambios**: el contexto recuerda entidades cargadas y sus modificaciones. `AsNoTracking()` evita ese seguimiento cuando solo necesitas leer.
+- **Ventaja:** menos SQL repetitivo. **Límite:** revisa qué datos cargas; usar un ORM no garantiza consultas rápidas.
+
+Estos apuntes usan **EF Core 10**, para .NET 10. **EF6** es otra línea de Entity Framework, habitual en aplicaciones antiguas; sus herramientas y ejemplos no son intercambiables. [Resumen oficial de EF Core](https://learn.microsoft.com/ef/core/).
+
+### Instalación: paquete, proveedor y herramientas
+
+Un **paquete NuGet** añade una biblioteca al proyecto. El **proveedor** adapta EF Core al motor de base de datos elegido.
+
+En la carpeta del proyecto, instala **el proveedor que necesitas**:
+
+| Base de datos | Paquete | Configuración C# |
+|---|---|---|
+| SQLite | `Microsoft.EntityFrameworkCore.Sqlite` | `UseSqlite(...)` |
+| SQL Server | `Microsoft.EntityFrameworkCore.SqlServer` | `UseSqlServer(...)` |
+
+**Para los ejemplos SQLite de .NET 10:**
+
+```powershell
+dotnet add package Microsoft.EntityFrameworkCore.Sqlite --version "10.*"
+```
+
+Para generar migraciones o clases desde una base existente, añade también:
+
+```powershell
+dotnet add package Microsoft.EntityFrameworkCore.Design --version "10.*"
+dotnet new tool-manifest
+dotnet tool install dotnet-ef --version "10.*"
+```
+
+- `Design`: permite a las herramientas trabajar con el modelo del proyecto.
+- `dotnet-ef`: herramienta que ejecuta los comandos `dotnet ef`.
+- El manifiesto registra herramientas locales del proyecto; créalo una sola vez. Si ya existe, omite `dotnet new tool-manifest`.
+- Usa versiones compatibles del proveedor, `Design` y `dotnet-ef`; aquí todas son de la línea 10. [Herramientas oficiales](https://learn.microsoft.com/ef/core/cli/dotnet).
+
+### Ejemplo 1: leer una base de datos con EF Core
+
+En el ejemplo:
+
+- `CatalogoDbContext` es la clase que permite trabajar con la base de datos.
+- `DbSet<Album>` permite consultar y guardar entidades `Album`.
+- EF Core reconoce `Id` como clave primaria por convención: el identificador de cada registro.
+- `Select` construye el DTO con los campos necesarios.
+
+**Preparación:** proyecto de consola .NET 10 con el proveedor SQLite instalado. Guarda las clases anteriores en el mismo proyecto.
+
+```csharp
+// CatalogoDbContext.cs
+using Microsoft.EntityFrameworkCore;
+
+public class CatalogoDbContext : DbContext
+{
+    public CatalogoDbContext(DbContextOptions<CatalogoDbContext> options)
+        : base(options)
+    {
+    }
+
+    public DbSet<Album> Albums => Set<Album>();
+}
+```
+
+**Program.cs:** crea una base SQLite temporal, guarda un álbum y consulta su DTO. SQLite es una base de datos real; aquí la mantenemos en memoria para que el ejemplo sea independiente.
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+
+var options = new DbContextOptionsBuilder<CatalogoDbContext>()
+    .UseSqlite("Data Source=:memory:")
+    .Options;
+
+await using var db = new CatalogoDbContext(options);
+await db.Database.OpenConnectionAsync();
+await db.Database.EnsureCreatedAsync();
+
+db.Albums.Add(new Album
+{
+    Titulo = "Jazz de medianoche",
+    CosteLicencia = 25m
+});
+await db.SaveChangesAsync();
+
+AlbumResumenDto? resumen = await db.Albums
+    .Where(album => album.Id == 1)
+    .Select(album => new AlbumResumenDto
+    {
+        Id = album.Id,
+        Titulo = album.Titulo
+    })
+    .FirstOrDefaultAsync();
+
+Console.WriteLine(JsonSerializer.Serialize(resumen));
+// {"Id":1,"Titulo":"Jazz de medianoche"}
+```
+
+- `SaveChangesAsync()` guarda la entidad. Añadirla a `db.Albums` por sí solo no escribe en la base de datos.
+- EF Core traduce esta consulta LINQ a SQL. Al proyectar con `Select` antes de ejecutarla, obtiene `Id` y `Titulo`; no necesita traer `CosteLicencia`.
+- Si cargas primero la entidad completa y después creas el DTO, reduces la respuesta enviada, pero ya has leído sus campos de la base de datos.
+- `EnsureCreatedAsync()` sirve para preparar esta demostración temporal. En aplicaciones con una base de datos que evoluciona, las **migraciones** gestionan los cambios de tablas y columnas.
+- En una Web API, normalmente registras el contexto con `AddDbContext`, que usa un ciclo de vida scoped. El servicio recibe el contexto por DI; no se comparte un `DbContext` entre peticiones ni se usa en paralelo.
+
+### Code First y Database First: por dónde empiezas
+
+| Enfoque | Empiezas por | Qué generas | Caso habitual |
+|---|---|---|---|
+| **Code First** | Entidades C# y configuración de EF | Migraciones para crear o cambiar tablas | Aplicación que controla su esquema de datos |
+| **Database First** | Una base de datos existente | Entidades C# y `DbContext` | Integración con una base ya diseñada |
+
+**Esquema** significa estructura de la base: tablas, columnas, claves y relaciones. Ambos enfoques usan EF Core para consultar y guardar datos.
+
+### Code First paso a paso: biblioteca
+
+Ejemplo independiente del catálogo de álbumes: guardaremos libros en un archivo SQLite.
+
+![Code First: proyecto, entidad, contexto, migración, tablas y uso](docs/images/ef-core-code-first.png)
+
+#### 1. Crear el proyecto e instalar
+
+```powershell
+dotnet new console -n BibliotecaDemo -f net10.0
+cd BibliotecaDemo
+```
+
+Ejecuta los comandos de instalación anteriores: proveedor SQLite, paquete `Design`, manifiesto y herramienta `dotnet-ef`.
+
+#### 2. Crear la entidad: `Libro.cs`
+
+```csharp
+public class Libro
+{
+    public int Id { get; set; }
+    public string Titulo { get; set; } = "";
+}
+```
+
+`Id` será la clave primaria. `Titulo` será una columna.
+
+#### 3. Crear el contexto: `BibliotecaDbContext.cs`
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+public class BibliotecaDbContext : DbContext
+{
+    public DbSet<Libro> Libros => Set<Libro>();
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+        => options.UseSqlite("Data Source=biblioteca.db");
+}
+```
+
+- `Libros`: entidades que podemos consultar y guardar; también da nombre a la tabla por convención.
+- `OnConfiguring`: configura el contexto; `UseSqlite` indica el motor y el archivo.
+- La conexión está en C# para esta demostración de consola. En una Web API, puedes leerla desde configuración y usar `AddDbContext`, como se muestra más abajo.
+
+#### 4. Generar y revisar la migración
+
+```powershell
+dotnet ef migrations add CrearBiblioteca
+```
+
+Una **migración** describe cambios del esquema. El comando crea archivos en `Migrations`; todavía no modifica la base de datos.
+
+| Elemento generado | Función |
+|---|---|
+| `Up()` | Operaciones para aplicar los cambios |
+| `Down()` | Operaciones para revertirlos; algunas pueden perder datos |
+| `ModelSnapshot` | Copia de la estructura del modelo usada para comparar futuros cambios |
+
+Revisa las operaciones generadas antes de aplicarlas.
+
+#### 5. Crear la base y sus tablas
+
+```powershell
+dotnet ef database update
+```
+
+Crea `biblioteca.db`, aplica la migración y registra que ya se ejecutó. **No inserta libros por sí solo.**
+
+#### 6. Guardar y consultar: `Program.cs`
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+await using var db = new BibliotecaDbContext();
+
+db.Libros.Add(new Libro { Titulo = "El principito" });
+await db.SaveChangesAsync();
+
+var libros = await db.Libros.AsNoTracking().ToListAsync();
+Console.WriteLine(libros[0].Titulo);
+```
+
+```powershell
+dotnet run
+```
+
+`await using` libera el contexto al terminar. `ToListAsync()` ejecuta la consulta y carga sus resultados. Cada ejecución añade otro libro.
+
+**Al añadir una propiedad**, por ejemplo `Autor`: modifica `Libro`, genera otra migración y aplícala con `database update`. EF compara el modelo con el snapshot anterior. La base no cambia automáticamente al editar C#. [Migraciones](https://learn.microsoft.com/ef/core/managing-schemas/migrations/).
+
+### Consola de Visual Studio: `Add-Migration` y `Update-Database`
+
+Abre **Herramientas → Administrador de paquetes NuGet → Consola del Administrador de paquetes**. Estos comandos pertenecen a esa consola; en una terminal normal usa `dotnet ef`.
+
+**Preparación:** instala `Microsoft.EntityFrameworkCore.Tools` de la línea 10 desde el administrador NuGet. Mantén el proveedor SQLite del ejemplo. Selecciona `BibliotecaDemo` como **proyecto predeterminado** de la consola y **proyecto de inicio** de la solución.
+
+| Operación | Consola de Visual Studio | Terminal normal |
+|---|---|---|
+| Generar una migración | `Add-Migration CrearBiblioteca` | `dotnet ef migrations add CrearBiblioteca` |
+| Aplicar migraciones pendientes | `Update-Database` | `dotnet ef database update` |
+
+Si aún no ejecutaste los pasos 4 y 5, puedes usar esta alternativa:
+
+```powershell
+Add-Migration CrearBiblioteca
+Update-Database
+```
+
+- `Add-Migration`: genera archivos que describen los cambios; no crea tablas todavía.
+- `Update-Database`: ejecuta los cambios pendientes; crea la base si corresponde y aplica las tablas y columnas.
+- Son dos formas de realizar los mismos pasos. No generes dos veces `CrearBiblioteca`.
+- Para cambios posteriores, utiliza otro nombre: `Add-Migration AgregarAutor` y después `Update-Database`. [Consola oficial de EF Core](https://learn.microsoft.com/ef/core/cli/powershell).
+
+#### Crear tablas no es insertar registros
+
+- **Tablas y columnas:** migraciones.
+- **Datos que llegan durante el uso:** `Add(...)` + `SaveChangesAsync()`, como en el paso 6.
+- **Datos fijos incluidos en una migración:** puedes declararlos con `HasData(...)`.
+
+Ejemplo opcional: añade este método dentro de `BibliotecaDbContext` para incluir un libro fijo. El identificador debe ser explícito y no existir ya en la tabla.
+
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Libro>().HasData(new Libro
+    {
+        Id = 100,
+        Titulo = "La isla del tesoro"
+    });
+}
+```
+
+Después, en la consola de Visual Studio:
+
+```powershell
+Add-Migration DatosIniciales
+Update-Database
+```
+
+La migración genera la inserción y `Update-Database` la aplica. `HasData` sirve para datos fijos gestionados con el modelo; para inicializaciones que consultan datos o necesitan lógica, EF Core ofrece `UseSeeding` y `UseAsyncSeeding`. [Inicialización de datos](https://learn.microsoft.com/ef/core/modeling/data-seeding).
+
+### `DatabaseGeneration`: creación del esquema y valores generados
+
+Conviene distinguir dos conceptos:
+
+| Concepto | Qué genera | Cómo |
+|---|---|---|
+| Crear o actualizar el esquema | Tablas y columnas | Migraciones + `database update` |
+| `[DatabaseGenerated]` | Configura cómo se generan valores de una propiedad | Atributo C#; depende del proveedor y del esquema |
+
+El atributo se llama **`DatabaseGenerated`**, no `DatabaseGeneration`. No es un tercer enfoque junto a Code First y Database First.
+
+Ejemplo independiente: un registro de acceso cuyo identificador se genera al insertarlo.
+
+```csharp
+using System.ComponentModel.DataAnnotations.Schema;
+
+public class RegistroAcceso
+{
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    public string Usuario { get; set; } = "";
+}
+```
+
+| Opción | Significado |
+|---|---|
+| `Identity` | Valor generado al insertar |
+| `Computed` | Valor generado al insertar o actualizar |
+| `None` | La aplicación proporciona el valor |
+
+- Para un `int Id` que es clave primaria, EF Core ya configura generación por convención; normalmente puedes omitir el atributo.
+- `Computed` no define la fórmula de una columna calculada. Debes configurar esa fórmula, un valor por defecto u otro mecanismo compatible con tu base de datos.
+- El atributo no garantiza generación para cualquier tipo; por ejemplo, un `DateTime` necesita configuración adicional. [Valores generados](https://learn.microsoft.com/ef/core/modeling/generated-properties).
+
+### Database First: generar C# desde una base existente
+
+**Flujo:** base existente → leer su esquema → generar entidades y `DbContext` → consultar con EF Core.
+
+Ejemplo: otro proyecto recibe el archivo `biblioteca.db` creado antes.
+
+1. Crea un proyecto de consola .NET 10 llamado `BibliotecaLectura`.
+2. Instala el proveedor SQLite, `Design` y `dotnet-ef` como antes.
+3. Copia el archivo existente `biblioteca.db` a la carpeta del nuevo proyecto.
+4. Desde esa carpeta, ejecuta:
+
+```powershell
+dotnet ef dbcontext scaffold "Data Source=biblioteca.db" Microsoft.EntityFrameworkCore.Sqlite --context BibliotecaLecturaDbContext --context-dir Datos --output-dir Modelos --no-onconfiguring
+```
+
+**Scaffolding** significa generar código a partir de una estructura existente.
+
+- `Modelos`: entidades generadas según las tablas y columnas.
+- `Datos/BibliotecaLecturaDbContext.cs`: contexto generado.
+- `--no-onconfiguring`: evita escribir la conexión dentro del código generado; configúrala al crear o registrar el contexto.
+- El comando lee el esquema; **no copia filas ni crea la base original**.
+- Si cambia el esquema, vuelve a generar o ajusta el modelo. Protege tus cambios manuales antes de regenerar archivos.
+- El proceso no conoce tus reglas de negocio ni genera los DTO de la API. [Database First y scaffolding](https://learn.microsoft.com/ef/core/managing-schemas/scaffolding/).
+
+Para usar el contexto generado en `Program.cs` del nuevo proyecto:
+
+```csharp
+using BibliotecaLectura.Datos;
+using Microsoft.EntityFrameworkCore;
+
+var options = new DbContextOptionsBuilder<BibliotecaLecturaDbContext>()
+    .UseSqlite("Data Source=biblioteca.db")
+    .Options;
+
+await using var db = new BibliotecaLecturaDbContext(options);
+Console.WriteLine(await db.Database.CanConnectAsync());
+```
+
+Esto comprueba la conexión. Puedes consultar los `DbSet` generados igual que en el ejemplo anterior.
+
+### Qué significa el registro `AddHttpClient` de la imagen
+
+La imagen registra `IPostsService` y `PostsService` como un **cliente HTTP tipado**: un servicio que recibe un `HttpClient` preparado para consultar una API concreta.
+
+| Parte de la imagen | Significado |
+|---|---|
+| `AddHttpClient<IPostsService, PostsService>` | Cuando un componente pide `IPostsService`, DI crea un `PostsService` y le entrega un `HttpClient` configurado |
+| `c => { ... }` | Función que configura ese cliente; `c` es el `HttpClient` |
+| `BaseAddress` | Dirección base para combinar con las rutas de las peticiones |
+| `new Uri(...)` | Convierte el texto de la dirección en un objeto que representa una URL |
+
+El registro no descarga datos. La petición se envía cuando el servicio llama a un método como `GetFromJsonAsync`.
+
+**Importante al formar la URL:** una base terminada en `/posts` y una ruta relativa `"1"` producen `/1`, porque el último segmento de la base se reemplaza. Con `/posts/` + `"1"`, el resultado es `/posts/1`. En el ejemplo siguiente usamos la raíz terminada en `/` y añadimos la ruta completa `albums/1`.
+
+### Ejemplo 2: leer una URL y convertir su JSON en un DTO
+
+Consultaremos [JSONPlaceholder: álbum 1](https://jsonplaceholder.typicode.com/albums/1), una API pública con datos ficticios. Su respuesta incluye `userId`, `id` y `title`; nuestro DTO solo necesita los dos últimos.
+
+```csharp
+// AlbumRemotoDto.cs
+using System.Text.Json.Serialization;
+
+public class AlbumRemotoDto
+{
+    public int Id { get; set; }
+
+    [JsonPropertyName("title")]
+    public string Titulo { get; set; } = "";
+}
+```
+
+`[JsonPropertyName("title")]` relaciona la propiedad JSON `title` con `Titulo` en C#. Al deserializar, `userId` se ignora porque este DTO no lo declara. Esto reduce lo que manejamos en C#, pero la API externa sigue enviando su JSON completo.
+
+**Servicio que consulta la URL:**
+
+```csharp
+// CatalogoRemoto.cs
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
+
+public interface ICatalogoRemoto
+{
+    Task<AlbumRemotoDto?> ObtenerAsync(int id);
+}
+
+public class CatalogoRemoto : ICatalogoRemoto
+{
+    private readonly HttpClient _httpClient;
+
+    public CatalogoRemoto(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<AlbumRemotoDto?> ObtenerAsync(int id)
+    {
+        return await _httpClient.GetFromJsonAsync<AlbumRemotoDto>($"albums/{id}");
+    }
+}
+```
+
+`GetFromJsonAsync` envía un **GET**, espera la respuesta y convierte el JSON en el DTO. El servicio reutiliza la configuración recibida por DI; no crea un `HttpClient` manualmente en cada método.
+
+### ¿Es mejor usar `appsettings.json` para la URL?
+
+**Sí, cuando la URL cambia según el entorno.** En una demostración breve puedes escribirla en C#; en una aplicación suele convenir separarla del código.
+
+- `appsettings.json`: configuración común.
+- `appsettings.Development.json`: valores que sustituyen los comunes durante desarrollo.
+- Variables de entorno: pueden sustituir esos valores al desplegar.
+- `WebApplication.CreateBuilder(args)` carga estas fuentes por defecto. Editar un JSON no requiere recompilar; reinicia la aplicación de este ejemplo para recrear los clientes con la nueva URL.
+
+**Añade esta sección al `appsettings.json` de la Web API:**
+
+```json
+{
+  "Apis": {
+    "Catalogo": {
+      "BaseUrl": "https://jsonplaceholder.typicode.com/"
+    }
+  }
+}
+```
+
+**Registro en `Program.cs`**, junto a los otros servicios y antes de `builder.Build()`; sustituye el registro con la URL escrita directamente:
+
+```csharp
+string baseUrl = builder.Configuration["Apis:Catalogo:BaseUrl"]
+    ?? throw new InvalidOperationException("Falta Apis:Catalogo:BaseUrl");
+
+builder.Services.AddHttpClient<ICatalogoRemoto, CatalogoRemoto>(client =>
+{
+    client.BaseAddress = new Uri(baseUrl);
+});
+```
+
+`Apis:Catalogo:BaseUrl` recorre las secciones del JSON. `AddHttpClient` conserva la misma función: configurar el cliente; `appsettings.json` aporta el valor.
+
+**También puedes configurar EF Core en una Web API:** añade al mismo JSON una sección `"ConnectionStrings": { "Catalogo": "Data Source=catalogo.db" }` y registra el contexto anterior:
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+string conexion = builder.Configuration.GetConnectionString("Catalogo")
+    ?? throw new InvalidOperationException("Falta ConnectionStrings:Catalogo");
+
+builder.Services.AddDbContext<CatalogoDbContext>(options =>
+    options.UseSqlite(conexion));
+```
+
+El archivo configurado debe tener las tablas preparadas mediante migraciones. Registrar el contexto no crea su esquema.
+
+`appsettings.json` es texto legible. Guarda contraseñas y claves en **User Secrets** durante desarrollo o en el gestor de secretos del despliegue. Una URL pública y una conexión SQLite sin contraseña pueden estar en el JSON. [Configuración de ASP.NET Core](https://learn.microsoft.com/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0).
+
+### Usar el cliente HTTP desde el controlador
+
+Mantén `AddControllers()` y `MapControllers()` como en el apartado de controladores. Los clientes tipados se registran como transient; la fábrica gestiona la reutilización de los manejadores que mantienen las conexiones. No hace falta registrar además `CatalogoRemoto` con `AddScoped`.
+
+**Controlador que utiliza el servicio:**
+
+```csharp
+// CatalogoExternoController.cs
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+
+[ApiController]
+[Route("api/catalogo-externo")]
+public class CatalogoExternoController : ControllerBase
+{
+    private readonly ICatalogoRemoto _catalogo;
+
+    public CatalogoExternoController(ICatalogoRemoto catalogo)
+    {
+        _catalogo = catalogo;
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<AlbumRemotoDto>> Obtener(int id)
+    {
+        var album = await _catalogo.ObtenerAsync(id);
+        if (album is null)
+            return NotFound();
+
+        return Ok(album);
+    }
+}
+```
+
+Al llamar a `GET /api/catalogo-externo/1`:
+
+1. El controlador pide el álbum al servicio.
+2. El servicio consulta `https://jsonplaceholder.typicode.com/albums/1`.
+3. El JSON se convierte en `AlbumRemotoDto`.
+4. La API devuelve el DTO con `id` y `title`; `userId` queda fuera.
+
+Un error HTTP de la API externa provoca una excepción en `GetFromJsonAsync`; no se convierte automáticamente en `null` ni en el `NotFound()` de este ejemplo. El manejo de esos errores se añade según las necesidades de la aplicación.
+
+Referencias: [Primeros pasos con EF Core y SQLite](https://learn.microsoft.com/ef/core/get-started/overview/first-app), [Proyectar solo los campos necesarios](https://learn.microsoft.com/ef/core/performance/efficient-querying#project-only-properties-you-need) y [Clientes HTTP tipados](https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory#typed-clients).
+
+## 11\. 🌐 Instalación y verificación de IIS (Internet Information Services)
 
 IIS es un servidor web de Microsoft para Windows. Su disponibilidad depende de la edición del sistema. Los pasos siguientes corresponden a Windows de escritorio; en Windows Server se añade el rol **Servidor web (IIS)**.
 
@@ -1294,7 +1931,7 @@ Con permisos de administrador, sigue estos pasos para activar IIS en Windows:
    - **Servicios de World Wide Web** (*World Wide Web Services*).
 6. Haga clic en **Aceptar** y espere a que Windows complete la instalación.
 
-<img width="413" height="367" alt="image" src="https://github.com/user-attachments/assets/cc564524-be46-45eb-a1a5-b11158d5b46f" />
+![Activar IIS en las características de Windows](docs/images/iis-activar-caracteristicas-windows.png)
 
 
 ### 2. ✅ Verificación de la instalación
@@ -1312,5 +1949,5 @@ Para comprobar que IIS se ha instalado correctamente y que el servidor web está
 
 Si el sitio predeterminado de IIS está iniciado y escucha en el puerto 80, aparecerá su página de bienvenida. Esto comprueba IIS; no significa que ya hayas publicado una API ASP.NET Core.
 
-<img width="601" height="315" alt="image" src="https://github.com/user-attachments/assets/e7b73186-1a2c-4325-8ed8-f27a3a39c728" />
+![Página de bienvenida de IIS en localhost](docs/images/iis-pagina-bienvenida-localhost.png)
 
