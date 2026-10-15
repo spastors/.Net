@@ -1396,6 +1396,10 @@ Un DTO válido no tendrá errores; a partir de ahí puedes delegar el trabajo al
 
 Separar la aplicación significa repartir el trabajo entre clases. Podemos empezar con carpetas dentro de un único proyecto.
 
+![Capas de una Web API: controlador, interfaz y servicio, reglas de negocio, DTO, Entity Framework Core y SQL Server](docs/images/arquitectura-capas-cine.png)
+
+La infografía amplía el ejemplo a una compra completa con guardado. Los DTO transportan la entrada y la respuesta; la entidad representa los datos almacenados. El código siguiente se centra en calcular el precio.
+
 | Pieza | Qué hace | En nuestro cine |
 |---|---|---|
 | **Controlador** | Recibe la petición HTTP, comprueba la entrada y devuelve una respuesta | Recibe la edad y devuelve el precio |

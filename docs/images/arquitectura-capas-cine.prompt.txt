@@ -1,0 +1,32 @@
+Use case: infographic-diagram
+Asset type: Spanish educational infographic for a beginner .NET README.
+Create ONE polished, extremely readable infographic about a layered ASP.NET Core Web API. Portrait layout, white background, dark navy headings, teal and blue panels, amber business-rule callout, simple flat icons, ample whitespace, large labels, clear directional arrows, no watermark. Match a clean technical study cheatsheet. Avoid dense paragraphs or large code blocks.
+Title verbatim: "Capas de una Web API .NET"
+Subtitle: "Ejemplo: comprar una entrada de cine"
+Main flow top to bottom, exactly these numbered components:
+
+1. "Cliente · frontend" smartphone/browser icon. "POST /api/entradas". A small envelope attached to the arrow toward controller, clearly labeled "DTO de entrada · CompraEntradaDto" with exact JSON {"edad":15}. Explain on envelope "Transporta datos; no es una capa".
+
+2. "Controlador · EntradasController". Two short bullets "Recibe HTTP y comprueba la entrada" and "Delega el trabajo al servicio". Near constructor dependency show "Depende de IEntradaService". No business pricing calculation here.
+
+3. ONE LARGE grouped box "Servicio · reglas de negocio" containing TWO side-by-side subcards (not two sequential request layers):
+left "IEntradaService · interfaz" and "Contrato: qué operaciones ofrece";
+right "EntradaService · implementación" and "Aplica las reglas y coordina el guardado".
+A dashed arrow from implementation to interface labeled "implementa".
+Within this service group a prominent amber mini-card "Regla del ejemplo" and "Menor de 18: 7 € · Adulto: 10 €" and "Edad 15 → precio 7 €".
+A small entry edge label "El controlador llama al contrato; se ejecuta EntradaService".
+Next to service outgoing arrow show "Entidad · Entrada" with fields "Edad = 15" and "Precio = 7". Label "Objeto que EF relaciona con la tabla".
+
+4. "Entity Framework Core · acceso a datos" with lines "DbContext: coordina consultas y cambios", "Add(entrada): prepara la inserción", "SaveChangesAsync(): envía el INSERT". Arrow to database labeled "SQL".
+
+5. "SQL Server · base de datos". Draw a table "Entradas" columns "Id", "Edad", "Precio" with row "42", "15", "7". Label "Guarda los registros".
+
+Provide a clear separate return rail with upward arrows, explicitly labeled "Resultado → servicio → controlador → cliente". Attach to controller-to-client return route an envelope "DTO de salida · EntradaSalidaDto" with exact JSON {"id":42,"precio":7} and label "HTTP 201 Created · JSON". Show service creates response DTO using saved Id, controller selects HTTP response. Do not make database return JSON or construct DTO.
+Bottom strip "DTO: datos de entrada y salida · Entidad: datos relacionados con la base".
+Second compact bottom strip "DI en Program.cs" with exact code "builder.Services.AddScoped<IEntradaService, EntradaService>();" and caption "Conecta el contrato con su implementación". DI registration is startup wiring, not a per-request hop.
+Footnote "En este ejemplo pequeño, las reglas viven en el servicio. Si crecen, pueden separarse en clases de dominio."
+Technical accuracy: DTOs are transport shapes, not separate runtime layers. Interface declares contract, implementation executes code. Database stores data, EF maps entities and SQL, controller manages HTTP, service applies business rules. The diagram is a conceptual extension of a simple cinema-price example, no need to show full C# implementation. Make Spanish text and code exact and readable.
+
+Final targeted edit:
+Edit the supplied infographic. Change exactly one thing: remove the short horizontal blue arrow pointing LEFT from the output DTO envelope toward the input DTO envelope in the TOP client panel. Replace that arrow with plain matching background. Those two DTOs must NOT point to one another.
+Preserve the entire rest of the infographic exactly, including the upward response rail leading into the output DTO, the input DTO downward arrow to controller, all text, code, arrows, colors and layout. The output DTO is already inside the client panel and does not need another arrow.

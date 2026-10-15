@@ -1,0 +1,49 @@
+Use case: infographic-diagram
+Asset type: Spanish educational infographic for a beginner .NET README.
+Create a polished and extremely readable landscape infographic with a white background, dark navy headings, teal blue panels, amber highlights for business rules, simple flat icons, plenty of spacing, clear directional arrows. Match the visual simplicity of study cheatsheets. No watermark.
+Title exactly: "Capas de una Web API .NET"
+Subtitle: "Ejemplo: vender una entrada de cine"
+Small badge: "Ejemplo conceptual: cálculo + guardado"
+
+Top: a small "Cliente / frontend" panel sends an arrow labelled "POST /api/entradas" with JSON {"edad":15} to the first layer.
+
+Main central row has FOUR large numbered panels:
+1 "Controlador" / "EntradasController"
+- "Recibe HTTP y el DTO"
+- "Valida la entrada"
+- "Pide la operación al servicio"
+- "Prepara la respuesta HTTP"
+Small analogy "La taquilla"
+
+2 "Servicio y contrato"
+Inside this panel, an upper small dashed-border card "IEntradaService" with label "Interfaz: qué operaciones ofrece".
+Below it a larger amber card "EntradaService" with label "Implementación: realiza la operación".
+A dotted relationship from the implementation toward the interface is labelled "implementa". The interface is a contract, NOT a separate processing step.
+Inside the implementation card a highlighted subsection "Reglas de negocio":
+"Menor de 18 años: 7 €"
+"Desde 18 años: 10 €"
+"Edad 15 → precio 7 €"
+and label "Coordina el guardado de la entrada".
+Small analogy "Las tarifas y la venta"
+
+3 "Entity Framework Core"
+"CineDbContext · DbSet<Entrada>"
+"Consulta y prepara cambios"
+"Add + SaveChangesAsync()"
+"Traduce operaciones a SQL"
+Small analogy "El intérprete"
+
+4 "Base de datos"
+"SQL Server"
+A simple table titled "Entradas" with three columns "Id", "Edad", "Precio" and a single row "42", "15", "7".
+Caption "Conserva los datos guardados"
+Small analogy "El registro de ventas"
+
+Forward main arrows go ONLY controller → service (label "Operación") → EF Core (label "Guardar") → SQL Server (label "INSERT"). Do not show interface as an extra hop.
+Below the main row, draw a clearly separate return path with leftward arrows SQL Server → EF Core → service → controller. Label "Resultado guardado: Id 42 · Precio 7 €". Then controller returns toward the client a response labelled "201 Created · JSON" with exact JSON {"id":42,"precio":7}. Keep HTTP only between client and controller, never between internal layers. Show no redirect and no claim the database sends HTTP.
+
+Bottom two concise strips:
+"DI conecta las piezas: entrega EntradaService al controlador y CineDbContext al servicio."
+"En este ejemplo pequeño, las reglas están en el servicio. Si crecen, pueden separarse en clases de dominio."
+
+Accuracy constraints: The interface declares a contract and does not execute business rules. The concrete service implements it. Business rules belong to the service/domain, not to controllers, EF Core or SQL Server. EF Core is an ORM, not the database itself. Data is persisted when SaveChangesAsync completes successfully. Do not imply every calculation needs a database; this illustration extends the price-only example with selling/persisting a ticket. Use no code blocks with undefined method bodies. Text is short and legible.
