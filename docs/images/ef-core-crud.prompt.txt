@@ -1,0 +1,34 @@
+Use case: infographic-diagram. Create a Spanish educational cheatsheet for beginner .NET notes. Landscape or square infographic, large readable monospace code, four numbered cards in a 2x2 grid, white background, navy text, teal blue amber and soft red accents, flat polished icons, plenty of space, no watermark.
+Title "CRUD con Entity Framework Core". Subtitle "SQL Server · BibliotecaDbContext · entidad Libro".
+Cards in reading order:
+1 top-left "CREATE · Crear · INSERT" with exact C# fragment:
+var libro = new Libro { Titulo = "Dune" };
+db.Libros.Add(libro);
+await db.SaveChangesAsync();
+Caption "Add prepara; SaveChangesAsync guarda."
+2 top-right "READ · Leer · SELECT" code:
+var libros = await db.Libros
+    .AsNoTracking()
+    .ToListAsync();
+Caption "No necesita SaveChangesAsync."
+3 bottom-left "UPDATE · Actualizar · UPDATE" code:
+var libro = await db.Libros
+    .FirstOrDefaultAsync(l => l.Id == 1);
+if (libro is not null)
+{
+    libro.Titulo = "Dune: edición revisada";
+    await db.SaveChangesAsync();
+}
+Caption "EF detecta el cambio del objeto consultado."
+4 bottom-right "DELETE · Borrar · DELETE" code:
+var libro = await db.Libros
+    .FirstOrDefaultAsync(l => l.Id == 1);
+if (libro is not null)
+{
+    db.Libros.Remove(libro);
+    await db.SaveChangesAsync();
+}
+Caption "Remove prepara; SaveChangesAsync borra."
+Bottom strip exact "En cada ejemplo: await using var db = new BibliotecaDbContext();" and "Para los métodos de consulta: using Microsoft.EntityFrameworkCore;".
+Small footnote "Ejemplos independientes. Si el Id no existe, no se modifica ni se borra nada."
+Make all text readable, syntax accurate, no SQLite, no arrows suggesting read writes to database.

@@ -1,0 +1,17 @@
+Use case: infographic-diagram. New Spanish educational infographic for a .NET README, white background, navy headings, teal blue and amber accents, polished flat icons, generous spacing, clear monospace code. Portrait format like a reference study sheet. Title "Database First con EF Core y SQL Server". Subtitle "Tablas existentes → clases C#". Five cards connected in a clear linear flow numbered 1 through 5, all text legible.
+Card1 "1 · La base ya existe". SQL Server cylinder "BibliotecaDemo", table "Libros", column headers "Id · int · clave primaria" and "Titulo · nvarchar(max)", sample row "1 | El principito". Caption "SQL Server LocalDB · Windows".
+Card2 "2 · Preparar el proyecto". exact commands:
+dotnet new console -n BibliotecaLectura -f net10.0
+cd BibliotecaLectura
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version "10.*"
+dotnet add package Microsoft.EntityFrameworkCore.Design --version "10.*"
+dotnet new tool-manifest
+dotnet tool install dotnet-ef --version "10.*"
+Card3 "3 · Leer el esquema: scaffolding". exact PowerShell command (can wrap visually):
+dotnet ef dbcontext scaffold "Server=(localdb)\MSSQLLocalDB;Database=BibliotecaDemo;Trusted_Connection=True;TrustServerCertificate=True" Microsoft.EntityFrameworkCore.SqlServer --context BibliotecaLecturaDbContext --context-dir Datos --output-dir Modelos --table Libros --no-onconfiguring
+Caption "Genera código; no copia filas ni crea tablas".
+Card4 "4 · Código generado". Two file cards: "Modelos/" with "Entidad: Id y Titulo"; "Datos/BibliotecaLecturaDbContext.cs" with "DbContext y DbSet". Caption "--no-onconfiguring: configura la conexión fuera del código generado".
+Card5 "5 · Usar EF Core". Caption "Configurar UseSqlServer(conexion) → crear contexto → consultar". Code fragment with clear label "Fragmento; db es el contexto configurado":
+var libros = await db.Libros.AsNoTracking().ToListAsync();
+Bottom band "Code First: C# → tablas" and "Database First: tablas → C#". Footnote "Si cambia el esquema, regenera o ajusta el modelo. Revisa los cambios antes de reemplazar archivos."
+No migrations command in this flow, no SQLite.

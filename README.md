@@ -70,6 +70,79 @@ dotnet run                  # Ejecutar proyecto
 dotnet build                # Compilar proyecto
 ```
 
+### Estructura básica de una Web API .NET
+
+Una aplicación web reúne código, configuración y dependencias. Esta es una organización sencilla; las carpetas opcionales se añaden cuando hacen falta:
+
+| Archivo o carpeta | Para qué sirve |
+|---|---|
+| `MyApi.csproj` | Define la versión de .NET, los paquetes NuGet y opciones de compilación |
+| `Program.cs` | Prepara y arranca la aplicación |
+| `appsettings.json` | Configuración común: conexiones, URLs y otras opciones |
+| `appsettings.Development.json` | Sustituye valores de configuración durante desarrollo |
+| `Properties/launchSettings.json` | Perfiles locales de arranque: URL, puerto y entorno; no configura el despliegue en producción |
+| `Controllers/` | Controladores que reciben peticiones HTTP y devuelven respuestas |
+| `DTOs/` | Clases con los datos que entran o salen de la API |
+| `Validators/` | Reglas para comprobar los datos de entrada |
+| `Services/` | Operaciones de la aplicación y lógica de negocio |
+| `Entities/` | Entidades relacionadas con las tablas de la base de datos |
+| `Data/` | Contexto de Entity Framework y configuración de acceso a datos |
+| `bin/` y `obj/` | Archivos generados al compilar; no se editan manualmente |
+
+Los nombres de las carpetas son convenciones; ASP.NET Core no exige esta distribución. Por ejemplo, crear `Validators/` organiza archivos, pero no registra ni ejecuta validaciones.
+
+#### ¿Para qué sirve `Program.cs`?
+
+Es el **punto de arranque**. Indica qué necesita la aplicación y cómo atenderá las peticiones.
+
+Ejemplo mínimo de una API con controladores:
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+app.MapControllers();
+
+app.Run();
+```
+
+| Instrucción | Qué hace |
+|---|---|
+| `CreateBuilder(args)` | Prepara el servidor, la configuración y el contenedor de dependencias |
+| `builder.Services...` | Registra lo que la aplicación podrá usar: controladores, servicios, validadores o contexto de datos |
+| `Build()` | Construye la aplicación con lo registrado |
+| `UseHttpsRedirection()` | Añade un paso que redirige HTTP a HTTPS cuando hay un puerto HTTPS configurado |
+| `MapControllers()` | Publica las rutas definidas en los controladores |
+| `Run()` | Arranca el servidor y mantiene la aplicación atendiendo peticiones |
+
+Los pasos configurados con métodos `Use...` se llaman **middleware**: procesan las peticiones y respuestas. Su orden puede cambiar el comportamiento. Los registros de servicios se añaden **antes de `Build()`**. [Middleware](https://learn.microsoft.com/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0).
+
+`Program.cs` prepara el arranque; el método del controlador se ejecuta cuando llega una petición a su endpoint. [Fundamentos de ASP.NET Core](https://learn.microsoft.com/aspnet/core/fundamentals/?view=aspnetcore-10.0).
+
+### Atajos útiles de Visual Studio en Windows
+
+| Atajo | Uso |
+|---|---|
+| **`Ctrl + .`** | Abre acciones rápidas: correcciones, añadir un `using`, generar código o refactorizar según el contexto |
+| `Ctrl + Espacio` | Muestra sugerencias de autocompletado de código |
+| `F12` | Va a la definición de un tipo o método |
+| `Shift + F12` | Busca dónde se usa un elemento |
+| `Ctrl + R`, `Ctrl + R` | Renombra un elemento y actualiza sus referencias |
+| `Ctrl + K`, `Ctrl + D` | Da formato al documento |
+| `Ctrl + K`, `Ctrl + C` | Comenta la selección |
+| `Ctrl + K`, `Ctrl + U` | Quita los comentarios de la selección |
+| `Ctrl + Shift + F` | Busca texto en archivos de la solución |
+| `Ctrl + Shift + B` | Compila la solución |
+| `F5` / `Ctrl + F5` | Ejecuta con depuración / sin depuración |
+| `F9` | Añade o quita un punto de interrupción para detener la ejecución al depurar |
+| `F10` / `F11` | Avanza una instrucción sin entrar / entrando en los métodos durante la depuración |
+
+En combinaciones separadas por coma, pulsa primero una y después la otra. Los atajos pueden variar según el perfil de teclado; puedes consultarlos o cambiarlos en **Herramientas → Opciones → Entorno → Teclado**. [Atajos oficiales](https://learn.microsoft.com/visualstudio/ide/default-keyboard-shortcuts-in-visual-studio).
+
 ## 3\. ⌨️ Sintaxis y Sistema de Tipos
 
 C\# es un lenguaje **tipado**: cada variable tiene un tipo que determina qué valores admite. Es **compilado**: el código se traduce antes de ejecutarse.
@@ -819,15 +892,7 @@ public class ProductoEntrada
 - `IActionResult`: representa la respuesta HTTP; se detalla en [Respuestas del controlador](#respuestas-del-controlador-iactionresult-y-actionresultt).
 - `[ApiController]`: activa ayudas para APIs; por ejemplo, responde **400** (petición incorrecta) si los datos no superan la validación.
 
-Para activar los controladores, añade en `Program.cs`:
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddControllers();
-var app = builder.Build();
-app.MapControllers();
-app.Run();
-```
+Para activar los controladores, usa `AddControllers()` y `MapControllers()`, como en [el ejemplo de `Program.cs`](#para-qué-sirve-programcs).
 
 Referencia: [APIs con controladores en ASP.NET Core](https://learn.microsoft.com/aspnet/core/web-api?view=aspnetcore-10.0).
 
@@ -1009,6 +1074,7 @@ GET /api/personas/5
 | Respuesta C# | Código HTTP | Significado |
 |---|---|---|
 | `Ok(datos)` | 200 | Petición correcta; devuelve datos |
+| `CreatedAtAction(...)` | 201 | Recurso creado; devuelve datos y su URL en `Location` |
 | `BadRequest(mensaje)` | 400 | Datos de la petición incorrectos |
 | `NotFound()` | 404 | Recurso no encontrado |
 | `NoContent()` | 204 | Petición correcta; sin cuerpo de respuesta |
@@ -1048,6 +1114,269 @@ public class ReservasController : ControllerBase
 No tener plazas sigue siendo una consulta correcta: devuelve **200** con `disponible: false`.
 
 **Nombres parecidos:** una *acción* es el método del controlador; `ActionResult<T>` representa su resultado; `Action<T>` es un delegado de C# para ejecutar una función que no devuelve valor.
+
+#### `CreatedAtAction()`: devolver el recurso creado y dónde consultarlo
+
+Se usa habitualmente al responder a un **POST que crea un recurso**. Prepara una respuesta con:
+
+- **201 Created:** el recurso se ha creado.
+- **Header `Location`:** URL para consultarlo.
+- **Body:** los datos que decidas devolver, normalmente un DTO.
+
+**Analogía:** al dar de alta un libro, entregas su ficha y la dirección donde encontrarla.
+
+Ejemplo: usa `Libro` y `BibliotecaDbContext`, definidos en el apartado de acceso a datos con SQL Server. El contexto debe estar registrado con `AddDbContext`; los controladores, con `AddControllers()` y `MapControllers()`.
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+public record CrearLibroDto(string Titulo);
+public record LibroRespuestaDto(int Id, string Titulo);
+
+[ApiController]
+[Route("api/libros")]
+public class LibrosController : ControllerBase
+{
+    private readonly BibliotecaDbContext _db;
+
+    public LibrosController(BibliotecaDbContext db)
+    {
+        _db = db;
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<LibroRespuestaDto>> Crear(CrearLibroDto entrada)
+    {
+        if (string.IsNullOrWhiteSpace(entrada.Titulo))
+            return BadRequest("Indica el título.");
+
+        var libro = new Libro { Titulo = entrada.Titulo };
+        _db.Libros.Add(libro);
+        await _db.SaveChangesAsync();
+
+        var respuesta = new LibroRespuestaDto(libro.Id, libro.Titulo);
+        return CreatedAtAction(nameof(Obtener), new { id = libro.Id }, respuesta);
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<LibroRespuestaDto>> Obtener(int id)
+    {
+        var libro = await _db.Libros.AsNoTracking()
+            .FirstOrDefaultAsync(l => l.Id == id);
+
+        if (libro is null)
+            return NotFound();
+
+        return Ok(new LibroRespuestaDto(libro.Id, libro.Titulo));
+    }
+}
+```
+
+Los `record` definen aquí DTO breves con propiedades `Titulo` e `Id`. El contexto se usa directamente para centrar el ejemplo en la respuesta HTTP; en la arquitectura por capas, el guardado y la consulta se delegan al servicio.
+
+**La línea clave:** `CreatedAtAction(nameof(Obtener), new { id = libro.Id }, respuesta)`.
+
+| Argumento | Qué hace |
+|---|---|
+| `nameof(Obtener)` | Indica la acción usada para generar la URL; obtiene su nombre sin escribirlo como texto fijo |
+| `new { id = libro.Id }` | Aporta el valor para `{id}` en la ruta del GET |
+| `respuesta` | Objeto que se envía en el body; no son parámetros de ruta |
+
+Si se crea el libro `7`, una respuesta ilustrativa sería:
+
+```http
+HTTP/1.1 201 Created
+Location: https://api.example/api/libros/7
+Content-Type: application/json; charset=utf-8
+
+{"id":7,"titulo":"Dune"}
+```
+
+El dominio y el puerto de `Location` dependen de dónde esté publicada la API.
+
+- `CreatedAtAction` **no guarda datos**: el guardado ya se hizo con `SaveChangesAsync()`.
+- **No ejecuta `Obtener` ni redirige al cliente**: genera la URL. El cliente decide si después hace un GET.
+- El nombre `Obtener` identifica la acción internamente; no aparece automáticamente en la URL.
+- La acción y los valores deben permitir construir una ruta válida. Si falta un valor requerido o no hay una ruta compatible, la generación de la respuesta falla.
+
+[Referencia de `CreatedAtAction`](https://learn.microsoft.com/dotnet/api/microsoft.aspnetcore.mvc.controllerbase.createdataction?view=aspnetcore-10.0).
+
+### Validaciones con FluentValidation
+
+**Validar** es comprobar que los datos cumplen las reglas antes de trabajar con ellos. Por ejemplo: un envío necesita destinatario y una cantidad de paquetes mayor que cero.
+
+**FluentValidation** es una biblioteca para escribir esas reglas en clases separadas. No forma parte de ASP.NET Core ni guarda datos.
+
+**Flujo:** JSON → DTO → validador → errores **400** o datos válidos para continuar.
+
+#### 1. Instalar el paquete
+
+En la carpeta del proyecto Web API:
+
+```powershell
+dotnet add package FluentValidation
+```
+
+Este ejemplo registra el validador manualmente con DI; basta con ese paquete. [Instalación](https://docs.fluentvalidation.net/en/latest/installation.html).
+
+#### 2. Definir los datos: `DTOs/CrearEnvioDto.cs`
+
+```csharp
+public class CrearEnvioDto
+{
+    public string? Destinatario { get; set; }
+    public int CantidadPaquetes { get; set; }
+}
+```
+
+Los bloques omiten los `namespace` para centrarse en las reglas. Si tu proyecto los usa, añade los `using` correspondientes.
+
+#### 3. Definir las reglas: `Validators/CrearEnvioValidator.cs`
+
+```csharp
+using FluentValidation;
+
+public class CrearEnvioValidator : AbstractValidator<CrearEnvioDto>
+{
+    public CrearEnvioValidator()
+    {
+        RuleFor(envio => envio.Destinatario)
+            .NotEmpty()
+            .WithMessage("{PropertyName} es obligatorio.");
+
+        RuleFor(envio => envio.CantidadPaquetes)
+            .GreaterThan(0)
+            .WithMessage("La cantidad debe ser mayor que {ComparisonValue}; recibida: {PropertyValue}.");
+    }
+}
+```
+
+| Elemento | Qué significa |
+|---|---|
+| `Validators/` | Carpeta convencional para organizar validadores; no tiene comportamiento automático |
+| `AbstractValidator<CrearEnvioDto>` | Clase base que permite declarar reglas para ese DTO |
+| Constructor `CrearEnvioValidator()` | Lugar donde se definen las reglas |
+| `RuleFor(envio => envio.Destinatario)` | Selecciona la propiedad que se comprobará |
+| `NotEmpty()` | Rechaza `null`, texto vacío o solo espacios; en colecciones exige elementos y en tipos de valor rechaza el valor por defecto, como `0` para `int` |
+| `GreaterThan(0)` | Exige un valor **estrictamente mayor que 0**; cero y negativos fallan |
+| `WithMessage(...)` | Personaliza el mensaje de la regla inmediatamente anterior |
+
+`NotEmpty()` sobre un número no significa «positivo»: `-1` no es cero. Para cantidades positivas usa `GreaterThan(0)`. [Primer validador](https://docs.fluentvalidation.net/en/latest/start.html), [Reglas incluidas](https://docs.fluentvalidation.net/en/latest/built-in-validators.html).
+
+#### `WithMessage`: qué significan las llaves `{}`
+
+Sin `$`, FluentValidation sustituye sus **marcadores predefinidos** cuando falla la regla:
+
+| Marcador | Valor en el ejemplo |
+|---|---|
+| `{PropertyName}` | Nombre de la propiedad: `Destinatario` |
+| `{PropertyValue}` | Valor recibido: por ejemplo, `0` |
+| `{ComparisonValue}` | Límite de una regla de comparación: aquí, `0` |
+
+Los marcadores disponibles dependen de la regla. Escribir `"{miVariable}"` no busca una variable C# con ese nombre.
+
+Para incluir una variable C# propia, usa **interpolación con `$`**. Esta es una alternativa a la regla anterior, dentro del constructor del validador:
+
+```csharp
+int minimo = 0;
+
+RuleFor(envio => envio.CantidadPaquetes)
+    .GreaterThan(minimo)
+    .WithMessage($"La cantidad debe ser mayor que {minimo}.");
+```
+
+Aquí C# inserta `minimo` al construir el mensaje. En `"{ComparisonValue}"`, la sustitución la hace FluentValidation al generar el error. [Mensajes personalizados](https://docs.fluentvalidation.net/en/latest/configuring.html).
+
+#### 4. Registrar el validador en `Program.cs`
+
+Junto a `AddControllers()`, **antes de `builder.Build()`**:
+
+```csharp
+using FluentValidation;
+
+builder.Services.AddScoped<IValidator<CrearEnvioDto>, CrearEnvioValidator>();
+```
+
+Cuando se pida `IValidator<CrearEnvioDto>`, DI entregará un `CrearEnvioValidator`. Registrar no ejecuta sus reglas. [Validadores e inyección de dependencias](https://docs.fluentvalidation.net/en/latest/di.html).
+
+#### 5. Validar desde el controlador
+
+Este endpoint comprueba la entrada y responde **200** si es válida o **400** si hay errores:
+
+```csharp
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+[ApiController]
+[Route("api/envios")]
+public class EnviosController : ControllerBase
+{
+    private readonly IValidator<CrearEnvioDto> _validator;
+
+    public EnviosController(IValidator<CrearEnvioDto> validator)
+    {
+        _validator = validator;
+    }
+
+    [HttpPost("validar")]
+    public async Task<IActionResult> Validar(
+        [FromBody] CrearEnvioDto entrada, CancellationToken cancellationToken)
+    {
+        var resultado = await _validator.ValidateAsync(entrada, cancellationToken);
+
+        if (!resultado.IsValid)
+        {
+            return BadRequest(new
+            {
+                errors = resultado.Errors.Select(error => new
+                {
+                    Campo = error.PropertyName,
+                    Mensaje = error.ErrorMessage
+                })
+            });
+        }
+
+        return Ok(new { Mensaje = "Datos válidos" });
+    }
+}
+```
+
+`CancellationToken` permite interrumpir la validación si la petición se cancela. `ValidateAsync` también sirve para validadores con reglas asíncronas.
+
+#### `resultado.Errors` y `errors` en la respuesta
+
+| Elemento | Significado |
+|---|---|
+| `resultado.IsValid` | `true` si no hay errores |
+| `resultado.Errors` | Lista de reglas fallidas; **`Errors` lleva mayúscula en C#** |
+| `error.PropertyName` | Campo que falló |
+| `error.ErrorMessage` | Mensaje generado, incluido el personalizado con `WithMessage` |
+| `errors` | Nombre elegido aquí para la lista enviada en el JSON |
+
+Si envías a `POST /api/envios/validar`:
+
+```json
+{"destinatario":"","cantidadPaquetes":0}
+```
+
+Obtienes **400 Bad Request** con:
+
+```json
+{
+  "errors": [
+    { "campo": "Destinatario", "mensaje": "Destinatario es obligatorio." },
+    { "campo": "CantidadPaquetes", "mensaje": "La cantidad debe ser mayor que 0; recibida: 0." }
+  ]
+}
+```
+
+Un DTO válido no tendrá errores; a partir de ahí puedes delegar el trabajo al servicio. Las reglas de negocio y los permisos también deben comprobarse donde corresponda.
+
+**Importante:** `[ApiController]` puede devolver **400** por JSON incorrecto o validación integrada de ASP.NET Core, pero no ejecuta por sí solo este validador. Aquí lo invocamos con `ValidateAsync`. La integración antigua `FluentValidation.AspNetCore` no es necesaria para este ejemplo y ya no se recomienda para proyectos nuevos. [FluentValidation en ASP.NET Core](https://docs.fluentvalidation.net/en/latest/aspnet.html).
 
 ### Swagger y OpenAPI
 
@@ -1433,17 +1762,16 @@ Estos apuntes usan **EF Core 10**, para .NET 10. **EF6** es otra línea de Entit
 
 Un **paquete NuGet** añade una biblioteca al proyecto. El **proveedor** adapta EF Core al motor de base de datos elegido.
 
-En la carpeta del proyecto, instala **el proveedor que necesitas**:
+Los ejemplos usan **SQL Server**. En la carpeta del proyecto, instala su proveedor:
 
 | Base de datos | Paquete | Configuración C# |
 |---|---|---|
-| SQLite | `Microsoft.EntityFrameworkCore.Sqlite` | `UseSqlite(...)` |
 | SQL Server | `Microsoft.EntityFrameworkCore.SqlServer` | `UseSqlServer(...)` |
 
-**Para los ejemplos SQLite de .NET 10:**
+**Para los ejemplos de .NET 10:**
 
 ```powershell
-dotnet add package Microsoft.EntityFrameworkCore.Sqlite --version "10.*"
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version "10.*"
 ```
 
 Para generar migraciones o clases desde una base existente, añade también:
@@ -1459,6 +1787,23 @@ dotnet tool install dotnet-ef --version "10.*"
 - El manifiesto registra herramientas locales del proyecto; créalo una sola vez. Si ya existe, omite `dotnet new tool-manifest`.
 - Usa versiones compatibles del proveedor, `Design` y `dotnet-ef`; aquí todas son de la línea 10. [Herramientas oficiales](https://learn.microsoft.com/ef/core/cli/dotnet).
 
+#### SQL Server y la conexión de los ejemplos
+
+**Requisito:** SQL Server instalado y accesible. Aquí usamos **SQL Server Express LocalDB**, una variante para desarrollo local en Windows. Puedes instalarla desde los componentes de Visual Studio o el instalador de SQL Server Express. Instalar el paquete NuGet no instala el servidor. [LocalDB](https://learn.microsoft.com/sql/database-engine/configure-windows/sql-server-express-localdb).
+
+```csharp
+string conexion = @"Server=(localdb)\MSSQLLocalDB;Database=BibliotecaDemo;Trusted_Connection=True;TrustServerCertificate=True";
+```
+
+| Parte | Significado |
+|---|---|
+| `Server=(localdb)\MSSQLLocalDB` | Instancia local de SQL Server |
+| `Database=BibliotecaDemo` | Base de datos de este ejemplo |
+| `Trusted_Connection=True` | Autenticación con el usuario de Windows |
+| `TrustServerCertificate=True` | Omite validar el certificado del servidor; se usa aquí para desarrollo local |
+
+Para otro servidor, adapta instancia y autenticación. En producción, configura un certificado válido. En C# usamos `@"..."` para escribir `\` directamente; en JSON debes escribir `\\`. [Proveedor SQL Server](https://learn.microsoft.com/ef/core/providers/sql-server/).
+
 ### Ejemplo 1: leer una base de datos con EF Core
 
 En el ejemplo:
@@ -1468,7 +1813,7 @@ En el ejemplo:
 - EF Core reconoce `Id` como clave primaria por convención: el identificador de cada registro.
 - `Select` construye el DTO con los campos necesarios.
 
-**Preparación:** proyecto de consola .NET 10 con el proveedor SQLite instalado. Guarda las clases anteriores en el mismo proyecto.
+**Preparación:** proyecto de consola .NET 10 con el proveedor SQL Server y LocalDB instalado. Guarda las clases anteriores en el mismo proyecto.
 
 ```csharp
 // CatalogoDbContext.cs
@@ -1482,32 +1827,36 @@ public class CatalogoDbContext : DbContext
     }
 
     public DbSet<Album> Albums => Set<Album>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+        => modelBuilder.Entity<Album>()
+            .Property(album => album.CosteLicencia).HasPrecision(10, 2);
 }
 ```
 
-**Program.cs:** crea una base SQLite temporal, guarda un álbum y consulta su DTO. SQLite es una base de datos real; aquí la mantenemos en memoria para que el ejemplo sea independiente.
+**Program.cs:** prepara la base local `CatalogoDemo`, guarda un álbum y consulta su DTO. Los datos se conservan entre ejecuciones; utiliza una base exclusiva para esta demostración.
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 var options = new DbContextOptionsBuilder<CatalogoDbContext>()
-    .UseSqlite("Data Source=:memory:")
+    .UseSqlServer(@"Server=(localdb)\MSSQLLocalDB;Database=CatalogoDemo;Trusted_Connection=True;TrustServerCertificate=True")
     .Options;
 
 await using var db = new CatalogoDbContext(options);
-await db.Database.OpenConnectionAsync();
 await db.Database.EnsureCreatedAsync();
 
-db.Albums.Add(new Album
+var nuevoAlbum = new Album
 {
     Titulo = "Jazz de medianoche",
     CosteLicencia = 25m
-});
+};
+db.Albums.Add(nuevoAlbum);
 await db.SaveChangesAsync();
 
 AlbumResumenDto? resumen = await db.Albums
-    .Where(album => album.Id == 1)
+    .Where(album => album.Id == nuevoAlbum.Id)
     .Select(album => new AlbumResumenDto
     {
         Id = album.Id,
@@ -1516,13 +1865,14 @@ AlbumResumenDto? resumen = await db.Albums
     .FirstOrDefaultAsync();
 
 Console.WriteLine(JsonSerializer.Serialize(resumen));
-// {"Id":1,"Titulo":"Jazz de medianoche"}
+// Primera ejecución: {"Id":1,"Titulo":"Jazz de medianoche"}
 ```
 
 - `SaveChangesAsync()` guarda la entidad. Añadirla a `db.Albums` por sí solo no escribe en la base de datos.
 - EF Core traduce esta consulta LINQ a SQL. Al proyectar con `Select` antes de ejecutarla, obtiene `Id` y `Titulo`; no necesita traer `CosteLicencia`.
 - Si cargas primero la entidad completa y después creas el DTO, reduces la respuesta enviada, pero ya has leído sus campos de la base de datos.
-- `EnsureCreatedAsync()` sirve para preparar esta demostración temporal. En aplicaciones con una base de datos que evoluciona, las **migraciones** gestionan los cambios de tablas y columnas.
+- `HasPrecision(10, 2)` configura `CosteLicencia` como `decimal(10,2)`: hasta diez dígitos, dos decimales.
+- `EnsureCreatedAsync()` crea el esquema si no existe; no actualiza tablas existentes. Se usa solo para esta demostración aislada. Para evolucionar la base, usa **migraciones**; no combines ambos mecanismos en la misma base.
 - En una Web API, normalmente registras el contexto con `AddDbContext`, que usa un ciclo de vida scoped. El servicio recibe el contexto por DI; no se comparte un `DbContext` entre peticiones ni se usa en paralelo.
 
 ### Code First y Database First: por dónde empiezas
@@ -1536,7 +1886,7 @@ Console.WriteLine(JsonSerializer.Serialize(resumen));
 
 ### Code First paso a paso: biblioteca
 
-Ejemplo independiente del catálogo de álbumes: guardaremos libros en un archivo SQLite.
+Ejemplo independiente del catálogo de álbumes: guardaremos libros en la base SQL Server `BibliotecaDemo`.
 
 ![Code First: proyecto, entidad, contexto, migración, tablas y uso](docs/images/ef-core-code-first.png)
 
@@ -1547,7 +1897,7 @@ dotnet new console -n BibliotecaDemo -f net10.0
 cd BibliotecaDemo
 ```
 
-Ejecuta los comandos de instalación anteriores: proveedor SQLite, paquete `Design`, manifiesto y herramienta `dotnet-ef`.
+Ejecuta los comandos de instalación anteriores: proveedor SQL Server, paquete `Design`, manifiesto y herramienta `dotnet-ef`. Necesitas LocalDB instalado para la conexión de este ejemplo.
 
 #### 2. Crear la entidad: `Libro.cs`
 
@@ -1571,12 +1921,12 @@ public class BibliotecaDbContext : DbContext
     public DbSet<Libro> Libros => Set<Libro>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-        => options.UseSqlite("Data Source=biblioteca.db");
+        => options.UseSqlServer(@"Server=(localdb)\MSSQLLocalDB;Database=BibliotecaDemo;Trusted_Connection=True;TrustServerCertificate=True");
 }
 ```
 
 - `Libros`: entidades que podemos consultar y guardar; también da nombre a la tabla por convención.
-- `OnConfiguring`: configura el contexto; `UseSqlite` indica el motor y el archivo.
+- `OnConfiguring`: configura el contexto; `UseSqlServer` indica el proveedor y la conexión.
 - La conexión está en C# para esta demostración de consola. En una Web API, puedes leerla desde configuración y usar `AddDbContext`, como se muestra más abajo.
 
 #### 4. Generar y revisar la migración
@@ -1601,7 +1951,7 @@ Revisa las operaciones generadas antes de aplicarlas.
 dotnet ef database update
 ```
 
-Crea `biblioteca.db`, aplica la migración y registra que ya se ejecutó. **No inserta libros por sí solo.**
+Crea la base `BibliotecaDemo` en SQL Server, aplica la migración y registra que ya se ejecutó. **No inserta libros por sí solo.**
 
 #### 6. Guardar y consultar: `Program.cs`
 
@@ -1625,11 +1975,95 @@ dotnet run
 
 **Al añadir una propiedad**, por ejemplo `Autor`: modifica `Libro`, genera otra migración y aplícala con `database update`. EF compara el modelo con el snapshot anterior. La base no cambia automáticamente al editar C#. [Migraciones](https://learn.microsoft.com/ef/core/managing-schemas/migrations/).
 
+### CRUD con EF Core: crear, leer, actualizar y borrar
+
+**CRUD** resume las cuatro operaciones habituales sobre los datos. Usamos `Libro` y `BibliotecaDbContext` del ejemplo anterior, con la base `BibliotecaDemo` ya creada mediante migraciones.
+
+![Cheatsheet CRUD con Entity Framework Core y SQL Server](docs/images/ef-core-crud.png)
+
+| Operación | Significado | En EF Core | SQL equivalente |
+|---|---|---|---|
+| **Create** | Crear un registro | `Add` + `SaveChangesAsync` | `INSERT` |
+| **Read** | Leer registros | `ToListAsync` / `FirstOrDefaultAsync` | `SELECT` |
+| **Update** | Modificar un registro | Cambiar el objeto consultado + `SaveChangesAsync` | `UPDATE` |
+| **Delete** | Borrar un registro | `Remove` + `SaveChangesAsync` | `DELETE` |
+
+**Analogía:** añadir un libro al catálogo, buscarlo, corregir su título o retirarlo.
+
+Cada bloque siguiente es un `Program.cs` independiente. Los identificadores se generan al crear registros; el `1` de los ejemplos debe corresponder a un libro existente.
+
+#### Create: guardar un libro nuevo
+
+```csharp
+await using var db = new BibliotecaDbContext();
+
+var libro = new Libro { Titulo = "Dune" };
+db.Libros.Add(libro);
+await db.SaveChangesAsync();
+
+Console.WriteLine(libro.Id); // EF recibe el Id generado por SQL Server.
+```
+
+`Add` prepara la inserción; `SaveChangesAsync()` la ejecuta. Cada ejecución crea otro registro.
+
+#### Read: consultar sin cambiar datos
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+await using var db = new BibliotecaDbContext();
+
+var libros = await db.Libros.AsNoTracking().ToListAsync();
+foreach (var libro in libros)
+    Console.WriteLine($"{libro.Id}: {libro.Titulo}");
+```
+
+- `ToListAsync()` ejecuta la consulta y devuelve una lista; si no hay libros, estará vacía.
+- `AsNoTracking()` evita guardar información de seguimiento en el contexto para esa lectura.
+- Para buscar uno por Id: `await db.Libros.AsNoTracking().FirstOrDefaultAsync(l => l.Id == 1)`; devuelve `null` si no existe.
+- Leer no necesita `SaveChangesAsync()`. En tablas grandes, filtra o pagina antes de `ToListAsync()`.
+
+#### Update: modificar un libro existente
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+await using var db = new BibliotecaDbContext();
+
+var libro = await db.Libros.FirstOrDefaultAsync(l => l.Id == 1);
+if (libro is not null)
+{
+    libro.Titulo = "Dune: edición revisada";
+    await db.SaveChangesAsync();
+}
+```
+
+El contexto sigue el objeto consultado y detecta el cambio de `Titulo`. En este caso no hace falta llamar a `Update()`. Si el Id no existe, no se modifica nada.
+
+#### Delete: borrar un libro existente
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+await using var db = new BibliotecaDbContext();
+
+var libro = await db.Libros.FirstOrDefaultAsync(l => l.Id == 1);
+if (libro is not null)
+{
+    db.Libros.Remove(libro);
+    await db.SaveChangesAsync();
+}
+```
+
+`Remove` prepara el borrado; `SaveChangesAsync()` lo ejecuta. Si el Id no existe, no se borra nada.
+
+**Para recordar:** las migraciones cambian la estructura; CRUD trabaja con los registros. En una Web API, estas operaciones suelen ir en servicios que reciben el contexto por DI. [Guardar datos con EF Core](https://learn.microsoft.com/ef/core/saving/basic), [Lecturas sin seguimiento](https://learn.microsoft.com/ef/core/querying/tracking).
+
 ### Consola de Visual Studio: `Add-Migration` y `Update-Database`
 
 Abre **Herramientas → Administrador de paquetes NuGet → Consola del Administrador de paquetes**. Estos comandos pertenecen a esa consola; en una terminal normal usa `dotnet ef`.
 
-**Preparación:** instala `Microsoft.EntityFrameworkCore.Tools` de la línea 10 desde el administrador NuGet. Mantén el proveedor SQLite del ejemplo. Selecciona `BibliotecaDemo` como **proyecto predeterminado** de la consola y **proyecto de inicio** de la solución.
+**Preparación:** instala `Microsoft.EntityFrameworkCore.Tools` de la línea 10 desde el administrador NuGet. Mantén el proveedor SQL Server del ejemplo. Selecciona `BibliotecaDemo` como **proyecto predeterminado** de la consola y **proyecto de inicio** de la solución.
 
 | Operación | Consola de Visual Studio | Terminal normal |
 |---|---|---|
@@ -1715,21 +2149,24 @@ public class RegistroAcceso
 
 **Flujo:** base existente → leer su esquema → generar entidades y `DbContext` → consultar con EF Core.
 
-Ejemplo: otro proyecto recibe el archivo `biblioteca.db` creado antes.
+![Database First: tablas de SQL Server, scaffolding y clases C#](docs/images/ef-core-database-first.png)
+
+Ejemplo: otro proyecto se conecta a la base SQL Server `BibliotecaDemo` creada antes. No necesita copiar archivos de base de datos.
 
 1. Crea un proyecto de consola .NET 10 llamado `BibliotecaLectura`.
-2. Instala el proveedor SQLite, `Design` y `dotnet-ef` como antes.
-3. Copia el archivo existente `biblioteca.db` a la carpeta del nuevo proyecto.
+2. Instala el proveedor SQL Server, `Design` y `dotnet-ef` como antes.
+3. Comprueba que puedes acceder a la instancia LocalDB y que `BibliotecaDemo` ya contiene la tabla `Libros`.
 4. Desde esa carpeta, ejecuta:
 
 ```powershell
-dotnet ef dbcontext scaffold "Data Source=biblioteca.db" Microsoft.EntityFrameworkCore.Sqlite --context BibliotecaLecturaDbContext --context-dir Datos --output-dir Modelos --no-onconfiguring
+dotnet ef dbcontext scaffold "Server=(localdb)\MSSQLLocalDB;Database=BibliotecaDemo;Trusted_Connection=True;TrustServerCertificate=True" Microsoft.EntityFrameworkCore.SqlServer --context BibliotecaLecturaDbContext --context-dir Datos --output-dir Modelos --table Libros --no-onconfiguring
 ```
 
 **Scaffolding** significa generar código a partir de una estructura existente.
 
 - `Modelos`: entidades generadas según las tablas y columnas.
 - `Datos/BibliotecaLecturaDbContext.cs`: contexto generado.
+- `--table Libros`: limita la generación a esa tabla.
 - `--no-onconfiguring`: evita escribir la conexión dentro del código generado; configúrala al crear o registrar el contexto.
 - El comando lee el esquema; **no copia filas ni crea la base original**.
 - Si cambia el esquema, vuelve a generar o ajusta el modelo. Protege tus cambios manuales antes de regenerar archivos.
@@ -1742,7 +2179,7 @@ using BibliotecaLectura.Datos;
 using Microsoft.EntityFrameworkCore;
 
 var options = new DbContextOptionsBuilder<BibliotecaLecturaDbContext>()
-    .UseSqlite("Data Source=biblioteca.db")
+    .UseSqlServer(@"Server=(localdb)\MSSQLLocalDB;Database=BibliotecaDemo;Trusted_Connection=True;TrustServerCertificate=True")
     .Options;
 
 await using var db = new BibliotecaLecturaDbContext(options);
@@ -1851,7 +2288,17 @@ builder.Services.AddHttpClient<ICatalogoRemoto, CatalogoRemoto>(client =>
 
 `Apis:Catalogo:BaseUrl` recorre las secciones del JSON. `AddHttpClient` conserva la misma función: configurar el cliente; `appsettings.json` aporta el valor.
 
-**También puedes configurar EF Core en una Web API:** añade al mismo JSON una sección `"ConnectionStrings": { "Catalogo": "Data Source=catalogo.db" }` y registra el contexto anterior:
+**También puedes configurar EF Core en una Web API:** añade esta sección al mismo JSON. Se usa otra base, `CatalogoApi`, para gestionar su esquema con migraciones:
+
+```json
+{
+  "ConnectionStrings": {
+    "Catalogo": "Server=(localdb)\\MSSQLLocalDB;Database=CatalogoApi;Trusted_Connection=True;TrustServerCertificate=True"
+  }
+}
+```
+
+Registra el contexto anterior en `Program.cs`:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
@@ -1860,12 +2307,12 @@ string conexion = builder.Configuration.GetConnectionString("Catalogo")
     ?? throw new InvalidOperationException("Falta ConnectionStrings:Catalogo");
 
 builder.Services.AddDbContext<CatalogoDbContext>(options =>
-    options.UseSqlite(conexion));
+    options.UseSqlServer(conexion));
 ```
 
-El archivo configurado debe tener las tablas preparadas mediante migraciones. Registrar el contexto no crea su esquema.
+Prepara las tablas de `CatalogoApi` mediante migraciones. Registrar el contexto no crea su esquema.
 
-`appsettings.json` es texto legible. Guarda contraseñas y claves en **User Secrets** durante desarrollo o en el gestor de secretos del despliegue. Una URL pública y una conexión SQLite sin contraseña pueden estar en el JSON. [Configuración de ASP.NET Core](https://learn.microsoft.com/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0).
+`appsettings.json` es texto legible. Guarda contraseñas y claves en **User Secrets** durante desarrollo o en el gestor de secretos del despliegue. Una URL pública y esta conexión local con autenticación de Windows pueden estar en el JSON. [Configuración de ASP.NET Core](https://learn.microsoft.com/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0).
 
 ### Usar el cliente HTTP desde el controlador
 
@@ -1910,7 +2357,7 @@ Al llamar a `GET /api/catalogo-externo/1`:
 
 Un error HTTP de la API externa provoca una excepción en `GetFromJsonAsync`; no se convierte automáticamente en `null` ni en el `NotFound()` de este ejemplo. El manejo de esos errores se añade según las necesidades de la aplicación.
 
-Referencias: [Primeros pasos con EF Core y SQLite](https://learn.microsoft.com/ef/core/get-started/overview/first-app), [Proyectar solo los campos necesarios](https://learn.microsoft.com/ef/core/performance/efficient-querying#project-only-properties-you-need) y [Clientes HTTP tipados](https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory#typed-clients).
+Referencias: [EF Core con SQL Server](https://learn.microsoft.com/ef/core/providers/sql-server/), [Proyectar solo los campos necesarios](https://learn.microsoft.com/ef/core/performance/efficient-querying#project-only-properties-you-need) y [Clientes HTTP tipados](https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory#typed-clients).
 
 ## 11\. 🌐 Instalación y verificación de IIS (Internet Information Services)
 
@@ -1951,3 +2398,8 @@ Si el sitio predeterminado de IIS está iniciado y escucha en el puerto 80, apar
 
 ![Página de bienvenida de IIS en localhost](docs/images/iis-pagina-bienvenida-localhost.png)
 
+---
+
+## Pasos finales
+
+Crear un cuestionario para junior de .net, c#, asp.net de 10 preguntas sobre estos apuntes...con 4 opciones y en la misma pregunta que se diga que se debería saber para responder bien la pregunta.

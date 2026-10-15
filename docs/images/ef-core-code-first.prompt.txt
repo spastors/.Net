@@ -1,37 +1,15 @@
-Use case: infographic-diagram
-Asset type: Spanish educational infographic for a .NET README.
-Create a polished readable portrait infographic with six numbered sequential cards joined by arrows, generous spacing, white background, dark navy headings, teal blue and amber accents, simple flat icons. No branding or watermarks. Keep all exact code readable in monospace. Title "Code First: una biblioteca con EF Core". Subtitle "Clases C# → migración → tablas". Use a new console .NET 10 project with SQLite.
-Card1 "1 · Crear proyecto e instalar". exact command lines:
-dotnet new console -n BibliotecaDemo -f net10.0
-cd BibliotecaDemo
-dotnet add package Microsoft.EntityFrameworkCore.Sqlite --version "10.*"
-dotnet add package Microsoft.EntityFrameworkCore.Design --version "10.*"
-dotnet new tool-manifest
-dotnet tool install dotnet-ef --version "10.*"
-Card2 "2 · Entidad: Libro.cs". exact code:
-public class Libro
-{
-    public int Id { get; set; }
-    public string Titulo { get; set; } = "";
-}
-small label "Clase → tabla · Propiedades → columnas"
-Card3 "3 · Contexto: BibliotecaDbContext.cs". exact code:
+Use case: infographic-diagram. Update the supplied Spanish Code First infographic to SQL Server. Preserve the overall design, six steps, colors, readable code, and correct serpentine arrows 1→2→3→4→5→6. White background, navy, teal and amber.
+Title "Code First: una biblioteca con EF Core". Subtitle "Clases C# → migración → SQL Server".
+Step1 use package "Microsoft.EntityFrameworkCore.SqlServer" in place of the old provider; keep all other .NET 10 install commands intact. Add small prerequisite label "SQL Server LocalDB instalado · Windows".
+Step3 context code must be exactly the following; wrap lines as needed without changing code:
 using Microsoft.EntityFrameworkCore;
 public class BibliotecaDbContext : DbContext
 {
     public DbSet<Libro> Libros => Set<Libro>();
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-        => options.UseSqlite("Data Source=biblioteca.db");
+        => options.UseSqlServer(
+            @"Server=(localdb)\MSSQLLocalDB;Database=BibliotecaDemo;Trusted_Connection=True;TrustServerCertificate=True");
 }
-small label "Conexión local de demostración"
-Card4 "4 · Generar y revisar la migración". exact command "dotnet ef migrations add CrearBiblioteca". labels "Up(): aplicar cambios · Down(): revertir cambios" and "Todavía no modifica la base de datos".
-Card5 "5 · Aplicar la migración". exact command "dotnet ef database update". draw SQLite table "Libros" columns "Id", "Titulo". label "Crea biblioteca.db y las tablas".
-Card6 "6 · Guardar y consultar: Program.cs". exact code:
-using Microsoft.EntityFrameworkCore;
-await using var db = new BibliotecaDbContext();
-db.Libros.Add(new Libro { Titulo = "El principito" });
-await db.SaveChangesAsync();
-var libros = await db.Libros.AsNoTracking().ToListAsync();
-Console.WriteLine(libros[0].Titulo);
-and command "dotnet run".
-Bottom footnote "Al cambiar las clases: nueva migración → database update". Avoid EnsureCreated, don't imply migrations add applies SQL.
+Step5 replace database file icon with SQL Server database cylinder labeled "BibliotecaDemo". Show table "Libros" with Id, Titulo and no rows, caption "Tabla vacía". Label "Crea la base y las tablas".
+Step4 maintain "dotnet ef migrations add CrearBiblioteca" and "Todavía no modifica la base de datos". Step5 command "dotnet ef database update". Step6 keep Add, SaveChangesAsync and query unchanged.
+Remove every reference to a database file, SQLite or UseSqlite. Keep all text readable, with spacious layout. TrustServerCertificate applies only to this local demonstration.
