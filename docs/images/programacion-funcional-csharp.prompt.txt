@@ -1,0 +1,28 @@
+Use case: infographic-diagram
+Asset type: Spanish beginner C# educational cheatsheet in a .NET README.
+Create one polished portrait infographic, extremely readable text and monospace C# code, white background, navy headings, teal/blue/amber accents, flat icons, spacious layout. No watermark.
+Title "Programación funcional en C#"
+Subtitle "Transforma datos con funciones pequeñas y predecibles"
+
+Five concise numbered concept cards:
+1 "Funciones puras". Exact explanation "Misma entrada → mismo resultado. Sin cambiar datos externos." Code "int Duplicar(int n) => n * 2;" and visual "3 → 6". Note "Leer DateTime.Now depende del reloj; no es puro."
+2 "Inmutabilidad". Text "Conserva los datos originales y produce valores nuevos." Visual original array "-1, 2, 3" and separate new array "4, 6". Note "No modificar un array no lo convierte en inmutable."
+3 "Funciones como valores". Text "Guárdalas en variables y pásalas a otros métodos." Exact code "Func<int, int> duplicar = n => n * 2;" then "Select(duplicar)". Small labels "int de entrada · int de salida".
+4 "Composición". Text "Conecta operaciones pequeñas: filtrar → transformar." Visual "-1, 2, 3 → Where(n > 0) → 2, 3 → Select(duplicar) → 4, 6". The Where label is conceptual; the full runnable code below uses a lambda.
+5 "Estilo declarativo". Text "Indica qué resultado quieres." Highlight "Where: cuáles · Select: cómo transformarlos". Note "LINQ puede usar este estilo; no garantiza pureza por sí solo."
+
+Bottom large code card "Ejemplo completo · Program.cs":
+using System;
+using System.Linq;
+int[] numeros = { -1, 2, 3 };
+Func<int, int> duplicar = n => n * 2;
+int[] resultado = numeros
+    .Where(n => n > 0)
+    .Select(duplicar)
+    .ToArray();
+Console.WriteLine(string.Join(", ", resultado));
+Caption "Salida: 4, 6 · numeros conserva -1, 2, 3".
+Below code a blue strip "Evaluación diferida: Where y Select esperan a que recorras la consulta. ToArray la ejecuta y guarda los resultados."
+Final band "Consola, HTTP y base de datos producen efectos: sepáralos de las transformaciones."
+Tiny footer "C# permite combinar programación funcional y orientación a objetos."
+Technical accuracy: ToArray returns a mutable new array, not an immutable structure. Console.WriteLine is an effect outside pure transformations. No claim functional automatically async/parallel or LINQ automatically pure. Accurate Spanish typography.

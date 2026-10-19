@@ -70,6 +70,50 @@ dotnet run                  # Ejecutar proyecto
 dotnet build                # Compilar proyecto
 ```
 
+### Dependencias NuGet: ¿se instalan para todos los proyectos?
+
+**Los paquetes NuGet se referencian por proyecto.** Instalarlos desde Visual Studio no los añade a todos tus proyectos.
+
+Una **solución** agrupa proyectos; cada proyecto tiene su propio archivo `.csproj` con sus dependencias.
+
+| Situación | Qué ocurre |
+|---|---|
+| Instalas AutoMapper en `MiApi` | Se añade la referencia a `MiApi.csproj` |
+| Otro proyecto está en la misma solución | No recibe AutoMapper solo por compartir solución |
+| Usas el administrador NuGet de la solución | Puedes seleccionar varios proyectos e instalarlo en cada uno |
+| Dos proyectos usan el mismo paquete y versión | Pueden reutilizar los archivos descargados en la caché |
+| Un paquete necesita otras bibliotecas | NuGet también restaura esas dependencias: son **transitivas** |
+| Quitas el paquete de un proyecto | No lo desinstalas de los demás; sus archivos pueden seguir en caché |
+
+**Ejemplo de referencia en `MiApi.csproj`:**
+
+```xml
+<ItemGroup>
+  <PackageReference Include="AutoMapper" Version="16.*" />
+</ItemGroup>
+```
+
+- **Referencia:** declara que el proyecto depende del paquete.
+- **Caché:** almacena los archivos descargados; en Windows suele estar en `%USERPROFILE%\.nuget\packages`. Tenerlos allí no añade referencias a otros proyectos.
+- **Restaurar:** obtiene los paquetes declarados y sus dependencias. Visual Studio suele hacerlo automáticamente; también puedes ejecutar `dotnet restore`.
+- Si `MiApi` referencia otro proyecto, puede recibir sus dependencias transitivamente, salvo que se haya restringido esa propagación.
+- Proyectos independientes pueden usar versiones distintas. Al reunir dependencias en una misma aplicación, NuGet resuelve las versiones; las incompatibilidades pueden producir conflictos.
+
+[Referencias por proyecto](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files), [Caché de NuGet](https://learn.microsoft.com/nuget/consume-packages/managing-the-global-packages-and-cache-folders), [Instalación desde Visual Studio](https://learn.microsoft.com/nuget/consume-packages/install-use-packages-visual-studio).
+
+#### ¿Se utiliza automáticamente después de instalarlo?
+
+Depende del paquete. Una biblioteca queda disponible para el proyecto, pero su integración puede necesitar configuración. Por ejemplo, AutoMapper requiere declarar mapas y registrar `AddAutoMapper`. Otros paquetes añaden analizadores o tareas de compilación que actúan al compilar.
+
+| Acción | Efecto |
+|---|---|
+| Instalar un paquete NuGet | Añade una dependencia al proyecto |
+| Escribir `using AutoMapper;` | Permite usar nombres cortos de ese espacio de nombres; no instala el paquete |
+| Llamar a `AddAutoMapper(...)` | Registra AutoMapper en el contenedor DI de esa aplicación |
+| Llamar a `_mapper.Map(...)` | Ejecuta un mapeo |
+
+**Si te refieres a inyección de dependencias:** un registro como `AddScoped<IAlbumService, AlbumService>()` pertenece al contenedor de la aplicación que lo ejecuta. No se comparte automáticamente con otros proyectos o aplicaciones. El registro indica cómo crear el servicio; la instancia se obtiene cuando se solicita al contenedor. [Inyección de dependencias](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection/overview).
+
 ### Estructura básica de una Web API .NET
 
 Una aplicación web reúne código, configuración y dependencias. Esta es una organización sencilla; las carpetas opcionales se añaden cuando hacen falta:
@@ -83,10 +127,12 @@ Una aplicación web reúne código, configuración y dependencias. Esta es una o
 | `Properties/launchSettings.json` | Perfiles locales de arranque: URL, puerto y entorno; no configura el despliegue en producción |
 | `Controllers/` | Controladores que reciben peticiones HTTP y devuelven respuestas |
 | `DTOs/` | Clases con los datos que entran o salen de la API |
+| `Mappings/` | Perfiles de AutoMapper: correspondencias entre entidades y DTO |
 | `Validators/` | Reglas para comprobar los datos de entrada |
 | `Services/` | Operaciones de la aplicación y lógica de negocio |
 | `Entities/` | Entidades relacionadas con las tablas de la base de datos |
 | `Data/` | Contexto de Entity Framework y configuración de acceso a datos |
+| `Repositories/` | Consultas y operaciones de acceso a datos que utilizan los servicios |
 | `bin/` y `obj/` | Archivos generados al compilar; no se editan manualmente |
 
 Los nombres de las carpetas son convenciones; ASP.NET Core no exige esta distribución. Por ejemplo, crear `Validators/` organiza archivos, pero no registra ni ejecuta validaciones.
@@ -618,20 +664,72 @@ Referencias: [Interfaces](https://learn.microsoft.com/dotnet/csharp/fundamentals
 
 ## 5\. 🔍 Generics y Colecciones
 
-Los **Genéricos (`<T>`)** nos permiten escribir código reutilizable y seguro sin especificar el tipo de dato exacto hasta el momento de usarlo.
+### Genéricos: reutilizar código cambiando el tipo de dato
 
-> **¿Por qué usarlos?** El compilador comprueba los tipos: `List<string>` no acepta enteros. `List<int>` evita convertir cada entero en `object` (**boxing**, una conversión que puede crear un objeto adicional). Los genéricos no evitan todas las conversiones: `List<object>` sí hace boxing al guardar un `int`.
+Un **genérico** es una clase, interfaz o método que recibe uno o más **tipos como parámetros**. Escribes el código una vez y eliges con qué tipos utilizarlo.
+
+**`T` representa un tipo pendiente de concretar**, como `int`, `string` o una clase propia. Es un nombre convencional; también puedes usar nombres como `TRespuesta`.
+
+**Analogía:** una caja con una etiqueta que indica qué admite. `List<string>` es una caja para textos; `List<int>`, para enteros.
+
+#### Ejemplo cotidiano: lista de destinatarios
 
 ```csharp
-// Lista genérica: Solo acepta enteros
-List<int> numeros = new List<int>(); 
+using System;
+using System.Collections.Generic;
 
-// Método genérico
-T DevolverElemento<T>(T elemento)
+var destinatarios = new List<string>();
+destinatarios.Add("Lucía");
+destinatarios.Add("Marcos");
+
+Console.WriteLine(destinatarios[0]); // Lucía
+// destinatarios.Add(42); // No compila: esta lista admite string, no int.
+```
+
+`List<T>` ya está programada en .NET. Al usar `List<string>`, sus operaciones trabajan con textos: `Add` recibe un `string` y el índice devuelve un `string`.
+
+#### Ejemplo práctico: una respuesta reutilizable
+
+Supón que varias operaciones devuelven **datos y un mensaje**. El dato cambia: a veces es un precio; otras, un nombre. Una clase genérica permite mantener el mismo formato:
+
+```csharp
+using System;
+
+var precio = new Respuesta<decimal>(29.90m, "Precio calculado");
+var cliente = new Respuesta<string>("Lucía", "Cliente encontrado");
+
+decimal importe = precio.Datos;
+string nombre = cliente.Datos;
+Console.WriteLine($"{nombre}: {importe}");
+
+public class Respuesta<T>
 {
-    return elemento;
+    public T Datos { get; }
+    public string Mensaje { get; }
+
+    public Respuesta(T datos, string mensaje)
+    {
+        Datos = datos;
+        Mensaje = mensaje;
+    }
 }
 ```
+
+| Uso | `T` representa | Tipo de `Datos` |
+|---|---|---|
+| `Respuesta<decimal>` | `decimal` | Un importe |
+| `Respuesta<string>` | `string` | Un texto |
+
+La clase `Respuesta<T>` se escribe una vez. Evitas crear clases separadas como `RespuestaPrecio` y `RespuestaNombre` solo porque cambia el tipo de `Datos`. Es un formato opcional; una API también puede devolver sus DTO directamente.
+
+#### Qué aporta y qué conviene recordar
+
+- **Reutilización:** una implementación para distintos tipos.
+- **Seguridad:** el compilador detecta tipos incompatibles. `T` no cambia libremente como `dynamic`.
+- **Menos conversiones:** al leer `precio.Datos`, obtienes un `decimal` directamente.
+- **Memoria:** `List<int>` guarda enteros sin convertir cada uno en `object`. Esa conversión se llama **boxing** y puede crear un objeto adicional. Usar genéricos no elimina todo boxing: `List<object>` sí lo hace al guardar un `int`.
+
+Los tipos se comprueban al compilar; .NET conserva la información de los tipos genéricos al ejecutar. Un genérico no conoce automáticamente propiedades de `T`: para exigir operaciones concretas se usan **restricciones** (`where T : ...`). [Genéricos en C#](https://learn.microsoft.com/dotnet/csharp/fundamentals/types/generics).
 
 ### Colecciones Básicas
 
@@ -788,21 +886,48 @@ Action<string> logger = (msg) => Console.WriteLine($"LOG: {msg}");
 
 ### Principios de programación funcional
 
-- **Funciones puras:** mismo input → mismo output; sin efectos secundarios.
+Es un estilo que transforma datos mediante funciones. En C# puedes combinarlo con clases y servicios.
+
+![Principios de programación funcional en C#: pureza, inmutabilidad, funciones como valores, composición y LINQ](docs/images/programacion-funcional-csharp.png)
+
+- **Funciones puras:** misma entrada → mismo resultado; sin efectos secundarios ni dependencias de datos externos cambiantes.
 - **Inmutabilidad:** evita modificar datos compartidos; crea valores nuevos.
 - **Funciones de primera clase:** asigna funciones a variables, pásalas como argumentos y devuélvelas.
 - **Composición:** combina funciones pequeñas para construir una transformación mayor.
 - **Declarativo:** describe el resultado (`Where`, `Select`) en lugar de los pasos manuales.
 
+Un **efecto secundario** es algo que ocurre fuera del resultado de la función: modificar una lista externa, escribir en consola o guardar en una base de datos. Leer `DateTime.Now` depende del reloj, por lo que una función que lo utiliza tampoco es pura.
+
+**Ejemplo: conservar los positivos y duplicarlos.** La transformación deja intacto el array original:
+
 ```csharp
-var numeros = new[] { -1, 2, 3 };
-var resultado = numeros
+using System;
+using System.Linq;
+
+int[] numeros = { -1, 2, 3 };
+Func<int, int> duplicar = n => n * 2;
+
+int[] resultado = numeros
     .Where(n => n > 0)
-    .Select(n => n * 2)
-    .ToArray(); // transforma; no modifica la lista original
+    .Select(duplicar)
+    .ToArray();
+
+Console.WriteLine(string.Join(", ", resultado)); // 4, 6
+// numeros conserva -1, 2, 3.
 ```
 
-LINQ suele usar **evaluación diferida**: espera hasta que el programa recorre los resultados para ejecutar la consulta. Por ejemplo, `ToArray()` la ejecuta y guarda los resultados en un array.
+| Paso | Qué hace | Resultado |
+|---|---|---|
+| `Where(n => n > 0)` | Selecciona los positivos | `2, 3` |
+| `Select(duplicar)` | Aplica la función a cada elemento | `4, 6` |
+| `ToArray()` | Ejecuta la consulta y guarda sus resultados | Nuevo array |
+
+- `Where` y `Select` usan **evaluación diferida**: trabajan al recorrer la consulta; `ToArray()` provoca ese recorrido.
+- `Console.WriteLine` es un efecto separado de la transformación.
+- No modificar un array no lo vuelve inmutable: tanto el original como el resultado se podrían modificar después.
+- LINQ no garantiza pureza: una lambda puede cambiar datos externos. Crear colecciones nuevas también reserva memoria.
+
+[Estilo funcional en C#](https://learn.microsoft.com/dotnet/standard/linq/functional-vs-imperative-programming), [Evaluación diferida](https://learn.microsoft.com/dotnet/standard/linq/deferred-execution-lazy-evaluation).
 
 ## 7\. 📊 LINQ (Language Integrated Query)
 
@@ -1378,6 +1503,196 @@ Un DTO válido no tendrá errores; a partir de ahí puedes delegar el trabajo al
 
 **Importante:** `[ApiController]` puede devolver **400** por JSON incorrecto o validación integrada de ASP.NET Core, pero no ejecuta por sí solo este validador. Aquí lo invocamos con `ValidateAsync`. La integración antigua `FluentValidation.AspNetCore` no es necesaria para este ejemplo y ya no se recomienda para proyectos nuevos. [FluentValidation en ASP.NET Core](https://docs.fluentvalidation.net/en/latest/aspnet.html).
 
+#### Ampliación: validaciones en la capa de servicio
+
+El validador comprueba la entrada; el **servicio también protege las reglas de negocio**, aunque se invoque desde otro lugar distinto del controlador.
+
+| Dónde | Qué comprueba | Ejemplo |
+|---|---|---|
+| Validador del DTO | Forma y valores básicos | Título obligatorio; coste no negativo |
+| Servicio / dominio | Reglas de la operación, con consultas si hacen falta | Este catálogo no permite repetir títulos |
+| Base de datos | Restricciones que deben cumplirse incluso con peticiones simultáneas | Índice único para impedir duplicados |
+
+**Sobre la primera imagen:** el servicio puede devolver `bool` si solo necesitas saber sí/no. Una **lista de errores** permite explicar qué falló. Si la lista está vacía, los datos son válidos; no necesitas guardar otro booleano que pueda contradecirla.
+
+**Ejemplo nuevo: validar el alta de un álbum.** Usamos `Album` y `CatalogoDbContext` del apartado de EF Core. La prohibición de títulos repetidos es una regla de este ejemplo.
+
+```csharp
+// DTOs/AltaAlbumDto.cs
+public class AltaAlbumDto
+{
+    public string Titulo { get; set; } = "";
+    public decimal CosteLicencia { get; set; }
+}
+```
+
+Primero definimos la búsqueda que utilizará el servicio.
+
+#### Búsqueda reutilizable en el repositorio
+
+La segunda imagen muestra un método que recibe un **filtro**: una condición para decidir qué registros devolver. `Where` aplica la condición y `ToList` obtiene los resultados.
+
+Para consultar SQL Server con EF Core, conviene recibir la condición como **`Expression<Func<Album, bool>>`**:
+
+| Tipo | Significado | Dónde se aplica el filtro |
+|---|---|---|
+| `Func<Album, bool>` | Función C# que recibe un álbum y devuelve verdadero/falso | En memoria, al usar `Enumerable.Where` |
+| `Expression<Func<Album, bool>>` | Representación de esa condición que EF Core puede analizar | En SQL Server, si la expresión se puede traducir |
+
+Con `DbSet.Where(filtro)` y un parámetro `Func<Album, bool>`, se elige la versión de LINQ para `IEnumerable`: se leen entidades antes de filtrarlas en C#. No basta con llamar `Where` antes de `ToList` para garantizar que filtre la base de datos. [Queryable.Where](https://learn.microsoft.com/dotnet/api/system.linq.queryable.where), [Enumerable.Where](https://learn.microsoft.com/dotnet/api/system.linq.enumerable.where).
+
+```csharp
+// Repositories/AlbumRepository.cs
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
+
+public interface IAlbumRepository
+{
+    Task<List<Album>> BuscarAsync(
+        Expression<Func<Album, bool>> filtro,
+        CancellationToken cancellationToken = default);
+}
+
+public class AlbumRepository : IAlbumRepository
+{
+    private readonly CatalogoDbContext _db;
+
+    public AlbumRepository(CatalogoDbContext db)
+    {
+        _db = db;
+    }
+
+    public Task<List<Album>> BuscarAsync(
+        Expression<Func<Album, bool>> filtro,
+        CancellationToken cancellationToken = default)
+    {
+        return _db.Albums.AsNoTracking()
+            .Where(filtro)
+            .ToListAsync(cancellationToken);
+    }
+}
+```
+
+En un servicio que recibe el repositorio como `_repository`, puedes reutilizarlo con condiciones diferentes:
+
+```csharp
+var baratos = await _repository.BuscarAsync(album => album.CosteLicencia < 20m);
+var jazz = await _repository.BuscarAsync(album => album.Titulo.Contains("Jazz"));
+```
+
+- `ToListAsync()` ejecuta la consulta; devuelve una lista vacía si no hay coincidencias. Devolver `IEnumerable` tampoco haría diferida una consulta que ya ejecutó `ToList()`.
+- `AsNoTracking()` encaja aquí porque solo leemos; no es el patrón para modificar directamente las entidades y llamar a `SaveChangesAsync()`.
+- No cualquier función C# se puede traducir a SQL. Una condición no traducible en `Where` puede provocar una excepción; evita métodos propios dentro del filtro salvo que estén soportados por el proveedor.
+- Para tablas grandes, añade límites o paginación. Si solo necesitas saber si existe algo, `AnyAsync(filtro)` evita cargar una lista de entidades.
+
+[Evaluación en cliente y servidor](https://learn.microsoft.com/ef/core/querying/client-eval), [Consultas eficientes](https://learn.microsoft.com/ef/core/performance/efficient-querying).
+
+#### Método de validación en el servicio
+
+Este ejemplo reúne comprobaciones sencillas y una consulta de negocio en un método que devuelve `List<string>`. Si ya tienes esas comprobaciones en FluentValidation, puedes inyectar `IValidator<AltaAlbumDto>` y reutilizarlo con `ValidateAsync`, sin repetir las reglas.
+
+```csharp
+// Services/AlbumService.cs
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+public interface IAlbumService
+{
+    Task<List<string>> ValidarAltaAsync(
+        AltaAlbumDto datos, CancellationToken cancellationToken = default);
+}
+
+public class AlbumService : IAlbumService
+{
+    private readonly IAlbumRepository _repository;
+
+    public AlbumService(IAlbumRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<List<string>> ValidarAltaAsync(
+        AltaAlbumDto datos, CancellationToken cancellationToken = default)
+    {
+        var errores = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(datos.Titulo))
+            errores.Add("El título es obligatorio.");
+
+        if (datos.CosteLicencia < 0)
+            errores.Add("El coste de licencia no puede ser negativo.");
+
+        if (errores.Count > 0)
+            return errores;
+
+        string titulo = datos.Titulo.Trim();
+        var coincidencias = await _repository.BuscarAsync(
+            album => album.Titulo == titulo, cancellationToken);
+
+        if (coincidencias.Count > 0)
+            errores.Add("Ya existe un álbum con ese título.");
+
+        return errores;
+    }
+}
+```
+
+Cada llamada crea su propia lista: no guardamos errores de una operación en un campo del servicio. El servicio devuelve datos; el controlador decide el código HTTP.
+
+#### Registro y uso desde el controlador
+
+En `Program.cs`, junto al registro SQL Server de `CatalogoDbContext` y antes de `Build()`:
+
+```csharp
+builder.Services.AddScoped<IAlbumRepository, AlbumRepository>();
+builder.Services.AddScoped<IAlbumService, AlbumService>();
+```
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using System.Threading;
+using System.Threading.Tasks;
+
+[ApiController]
+[Route("api/albums")]
+public class ValidacionAlbumController : ControllerBase
+{
+    private readonly IAlbumService _service;
+
+    public ValidacionAlbumController(IAlbumService service)
+    {
+        _service = service;
+    }
+
+    [HttpPost("validar-alta")]
+    public async Task<IActionResult> ValidarAlta(
+        AltaAlbumDto datos, CancellationToken cancellationToken)
+    {
+        var errores = await _service.ValidarAltaAsync(datos, cancellationToken);
+
+        if (errores.Count > 0)
+            return BadRequest(new { errors = errores });
+
+        return Ok(new { Valido = true });
+    }
+}
+```
+
+`POST /api/albums/validar-alta` solo comprueba los datos; no guarda el álbum.
+
+| Resultado del servicio | Respuesta de este endpoint |
+|---|---|
+| Lista vacía | **200**: `{"valido":true}` |
+| Uno o más errores | **400**: `{"errors":["El título es obligatorio."]}` |
+
+**Al implementar el alta real**, valida y guarda dentro de la misma operación del servicio; un endpoint previo de validación no garantiza que los datos sigan siendo válidos después. Dos peticiones pueden comprobar un título a la vez: protege también la unicidad mediante un índice único en SQL Server y gestiona el conflicto al guardar. [Índices únicos](https://learn.microsoft.com/ef/core/modeling/indexes#index-uniqueness).
+
 ### Swagger y OpenAPI
 
 - **OpenAPI** es un formato estándar para describir una API: rutas, métodos (`GET`, `POST`), parámetros y respuestas. Suele publicarse como un archivo JSON.
@@ -1403,12 +1718,72 @@ La infografía amplía el ejemplo a una compra completa con guardado. Los DTO tr
 | Pieza | Qué hace | En nuestro cine |
 |---|---|---|
 | **Controlador** | Recibe la petición HTTP, comprueba la entrada y devuelve una respuesta | Recibe la edad y devuelve el precio |
+| **Validador** | Comprueba las reglas de entrada del DTO | Rechaza una edad negativa |
 | **Servicio / caso de uso** | Realiza una operación de la aplicación | Calcula el precio; en una compra podría coordinar cobro, guardado y envío de la entrada |
 | **Dominio** | Contiene las reglas del negocio | Un menor paga 7 €; un adulto, 10 € |
+| **Repositorio** | Encapsula operaciones de acceso a datos | Ofrece `GuardarEntradaAsync(...)` sin exponer el SQL al servicio |
+| **EF Core** | Relaciona entidades con tablas y ejecuta consultas y cambios | Traduce el guardado a una inserción en SQL Server |
+| **Base de datos** | Almacena y consulta los registros | Conserva las entradas vendidas |
 | **Infraestructura** | Se comunica con una base de datos u otros sistemas | Guarda entradas o utiliza un proveedor de correo |
 | **Interfaz** | Declara qué operaciones ofrece una pieza | Permite pedir un precio sin conocer el cálculo concreto |
 
-**Una petición paso a paso:**
+#### Programación por capas: cómo leer el esquema
+
+**Una capa agrupa responsabilidades relacionadas.** En el esquema de la imagen:
+
+- **Presentación:** controlador y validación de la entrada HTTP.
+- **Aplicación y negocio:** servicios que coordinan la operación y aplican las reglas.
+- **Acceso a datos:** repositorios y tecnologías como EF Core.
+- **SQL Server:** almacena los datos; puede ejecutar procedimientos almacenados.
+
+Son separaciones lógicas: pueden convivir en un único proyecto y proceso. No necesitas un servidor por capa. [Arquitectura por capas](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures).
+
+```mermaid
+flowchart LR
+    C[Controlador] -->|Valida el DTO| V[Validador]
+    V -->|Resultado de validación| C
+    C -->|Si la entrada es válida| S[Servicio]
+    S --> R[Repositorio]
+    R --> EF[Entity Framework Core]
+    EF --> T
+    R -.->|Otra opción: ADO.NET o Dapper| SP
+    EF -.->|También puede ejecutar| SP
+    subgraph SQLServer[SQL Server]
+        SP[Procedimiento almacenado]
+        SP --> T[(Tablas)]
+    end
+```
+
+Las flechas muestran llamadas. Los resultados vuelven al servicio y después al controlador, que construye la respuesta HTTP. Si la entrada falla, el controlador devuelve **400** sin continuar la operación.
+
+**Ejemplo de compra:**
+
+1. El controlador recibe un DTO con `Edad = 15`.
+2. El validador comprueba que la edad no sea negativa.
+3. El servicio aplica la tarifa: **7 €**.
+4. El servicio pide al repositorio que guarde la entrada.
+5. El repositorio usa EF Core; `SaveChangesAsync()` envía los cambios a SQL Server.
+6. El resultado vuelve al servicio y al controlador, que devuelve el DTO de salida con **201 Created**.
+
+**Servicio y repositorio responden a preguntas distintas:**
+
+- Servicio: «¿Qué debe hacer la aplicación y qué reglas debe cumplir?».
+- Repositorio: «¿Cómo obtengo o guardo estos datos?».
+- `IEntradaService` e `IEntradaRepository` serían los contratos; `EntradaService` y `EntradaRepository`, sus implementaciones. Las interfaces no son pasos adicionales de la petición: DI conecta cada contrato con la clase que lo ejecuta.
+
+Un repositorio propio es **opcional**. En una aplicación pequeña, el servicio puede usar `DbContext` directamente. Añadir un repositorio resulta útil si concentra consultas o permite sustituir el acceso a datos; también añade clases y mantenimiento. [Repositorio sobre EF Core](https://learn.microsoft.com/ef/core/testing/choosing-a-testing-strategy#repository-pattern).
+
+#### ¿Qué significa `SP` en la imagen?
+
+En este contexto, **SP** suele significar *Stored Procedure*: **procedimiento almacenado**, código SQL guardado en la base de datos que ejecutas con parámetros.
+
+- El repositorio puede llamarlo mediante ADO.NET, Dapper o EF Core. ADO.NET y Dapper son otras herramientas para ejecutar SQL desde C#.
+- EF Core y los procedimientos almacenados pueden combinarse; no son caminos excluyentes.
+- El procedimiento se ejecuta en SQL Server. Las reglas de negocio de este ejemplo permanecen en el servicio o dominio.
+
+[Consultas SQL y procedimientos con EF Core](https://learn.microsoft.com/ef/core/querying/sql-queries).
+
+#### Ejemplo del código: consultar el precio sin guardar una compra
 
 1. El navegador envía `GET /api/entradas/precio?edad=15`.
 2. El controlador recibe `edad = 15` y comprueba que no sea negativa.
@@ -1687,7 +2062,7 @@ La consola simula la entrega. Podemos implementar el mismo contrato para entrega
 
 Referencias: [Arquitectura por capas](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures), [Inyección de dependencias](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection) y [Ciclos de vida](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection/service-lifetimes).
 
-## 10. Acceso a datos: entidades, DTO, EF Core y APIs externas
+## 10. Acceso a datos: entidades, DTO, AutoMapper, EF Core y APIs externas
 
 ### Entidad y DTO: guardar datos y transportar datos
 
@@ -1735,6 +2110,7 @@ public class AlbumResumenDto
 | **EF Core** | Consultar y guardar datos en una base de datos |
 | **Entidad** | Representar los datos que EF Core relaciona con la base de datos |
 | **DTO** | Representar los datos que transferimos al cliente o recibimos de otra API |
+| **AutoMapper** | Trasladar valores entre objetos, por ejemplo, de una entidad a un DTO |
 | **HttpClient** | Enviar peticiones HTTP a una API externa |
 
 Los DTO también se usan sin EF Core. Una respuesta JSON de una URL puede convertirse directamente en un DTO.
@@ -1878,6 +2254,206 @@ Console.WriteLine(JsonSerializer.Serialize(resumen));
 - `HasPrecision(10, 2)` configura `CosteLicencia` como `decimal(10,2)`: hasta diez dígitos, dos decimales.
 - `EnsureCreatedAsync()` crea el esquema si no existe; no actualiza tablas existentes. Se usa solo para esta demostración aislada. Para evolucionar la base, usa **migraciones**; no combines ambos mecanismos en la misma base.
 - En una Web API, normalmente registras el contexto con `AddDbContext`, que usa un ciclo de vida scoped. El servicio recibe el contexto por DI; no se comparte un `DbContext` entre peticiones ni se usa en paralelo.
+
+### AutoMapper: pasar datos de un objeto a otro
+
+**Mapear** significa decidir qué propiedad de origen proporciona el valor de cada propiedad de destino. Eso representan las flechas de la imagen: correspondencias entre dos clases.
+
+**AutoMapper** es una biblioteca .NET que aplica esas correspondencias. Se utiliza, por ejemplo, para convertir una entidad en un DTO sin repetir asignaciones en cada operación.
+
+**Analogía:** traslada los datos de una ficha interna a otra ficha, usando las casillas que hayas relacionado.
+
+![AutoMapper: entidad a DTO, nombres distintos y mapeo sobre un objeto existente](docs/images/automapper-entidad-dto.png)
+
+#### 1. Instalar y preparar los tipos
+
+En el proyecto Web API .NET 10:
+
+```powershell
+dotnet add package AutoMapper --version "16.*"
+```
+
+Usamos `Album` y `CatalogoDbContext` del ejemplo anterior, con el proveedor SQL Server instalado. Añade estos DTO al mismo proyecto:
+
+```csharp
+// DTOs/AlbumLecturaDto.cs
+public class AlbumLecturaDto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = "";
+}
+
+// DTOs/AlbumEdicionDto.cs
+public class AlbumEdicionDto
+{
+    public string Nombre { get; set; } = "";
+}
+```
+
+La entidad tiene `Id`, `Titulo` y `CosteLicencia`. El DTO de lectura devuelve `Id` y `Nombre`; el de edición solo permite enviar el nombre.
+
+**Licencia:** desde AutoMapper 15 se requiere una licencia. Configura su clave en `AutoMapper:LicenseKey`, por ejemplo mediante User Secrets durante desarrollo. Consulta la [configuración oficial de licencia](https://docs.automapper.io/en/stable/License-configuration.html). `AddAutoMapper` está incluido en el paquete principal; no necesitas el antiguo paquete de integración con DI.
+
+#### 2. Definir los mapas: `Mappings/AlbumMappingProfile.cs`
+
+Un **perfil** agrupa mapas. Hereda de `Profile` y los declara en su constructor:
+
+```csharp
+using AutoMapper;
+
+public class AlbumMappingProfile : Profile
+{
+    public AlbumMappingProfile()
+    {
+        // Entidad → DTO de lectura.
+        CreateMap<Album, AlbumLecturaDto>()
+            .ForMember(destino => destino.Nombre,
+                opcion => opcion.MapFrom(origen => origen.Titulo));
+
+        // DTO de edición → entidad existente.
+        CreateMap<AlbumEdicionDto, Album>()
+            .ForMember(destino => destino.Titulo,
+                opcion => opcion.MapFrom(origen => origen.Nombre))
+            .ForMember(destino => destino.Id, opcion => opcion.Ignore())
+            .ForMember(destino => destino.CosteLicencia, opcion => opcion.Ignore());
+    }
+}
+```
+
+| Elemento | Qué hace |
+|---|---|
+| `CreateMap<Origen, Destino>()` | Define un mapeo en esa dirección |
+| `ForMember(destino => destino.Nombre, ...)` | Configura esa propiedad del destino |
+| `MapFrom(origen => origen.Titulo)` | Indica de qué propiedad obtener el valor |
+| `Ignore()` | Evita asignar esa propiedad durante ese mapeo |
+
+`Id` se copia por convención al DTO de lectura: tiene el mismo nombre y tipo. Para `Titulo → Nombre` escribimos la correspondencia. En edición, `Id` y `CosteLicencia` se conservan gracias a `Ignore()`.
+
+Crear el mapa `Album → AlbumLecturaDto` no crea automáticamente el inverso. Aquí definimos un mapa de edición separado para elegir qué se puede modificar. [Perfiles](https://docs.automapper.io/en/stable/Configuration.html), [Mapeo inverso](https://docs.automapper.io/en/stable/Reverse-Mapping-and-Unflattening.html).
+
+#### 3. Registrar AutoMapper en `Program.cs`
+
+Ejemplo de arranque completo. Necesita la conexión `ConnectionStrings:Catalogo` a SQL Server, sus tablas preparadas y la clave de licencia configurada:
+
+```csharp
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+
+builder.Services.AddDbContext<CatalogoDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Catalogo")
+        ?? throw new InvalidOperationException("Falta ConnectionStrings:Catalogo")));
+
+builder.Services.AddAutoMapper(configuracion =>
+{
+    configuracion.LicenseKey = builder.Configuration["AutoMapper:LicenseKey"]
+        ?? throw new InvalidOperationException("Falta AutoMapper:LicenseKey");
+}, typeof(AlbumMappingProfile));
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.Services.GetRequiredService<AutoMapper.IConfigurationProvider>()
+        .AssertConfigurationIsValid();
+}
+
+app.MapControllers();
+app.Run();
+```
+
+- `typeof(AlbumMappingProfile)` indica dónde buscar los perfiles; la carpeta `Mappings/` por sí sola no los registra.
+- DI permite recibir `IMapper` en el constructor de un servicio o controlador.
+- `AssertConfigurationIsValid()` comprueba la configuración: detecta, por ejemplo, propiedades de destino sin correspondencia. No valida los datos que envía un usuario.
+
+[Registro con DI](https://docs.automapper.io/en/stable/Dependency-injection.html), [Validación de mapas](https://docs.automapper.io/en/stable/Configuration-validation.html).
+
+#### ¿Qué pasa si los campos son diferentes?
+
+| Situación | Comportamiento / solución |
+|---|---|
+| Mismo nombre y tipos compatibles | Se mapean por convención, dentro de un mapa configurado |
+| Nombres distintos: `Titulo` y `Nombre` | Configura `ForMember(...).MapFrom(...)`; no deduce que sean sinónimos |
+| Campo solo en el origen: `CosteLicencia` al leer | No aparece en el DTO porque este no declara esa propiedad |
+| Propiedad de destino sin origen | Define su valor con `MapFrom` o exclúyela con `Ignore`; la validación predeterminada del mapa detecta miembros sin resolver |
+| Tipos incompatibles | Configura una conversión; no todas las transformaciones son automáticas ni todos los valores se pueden convertir |
+| Propiedad ignorada en un objeto existente | Conserva el valor que ya tenía |
+| Propiedad ignorada en un objeto nuevo | Conserva el valor inicial de ese objeto |
+
+#### 4. Crear un DTO o modificar una entidad existente
+
+Son dos usos distintos de `Map`. En un componente que recibe `IMapper` como `_mapper`:
+
+```csharp
+// Crea un DTO nuevo a partir de la entidad.
+AlbumLecturaDto dto = _mapper.Map<AlbumLecturaDto>(album);
+
+// Aplica datos sobre la misma entidad existente.
+_mapper.Map(datos, existente);
+```
+
+| Antes | Entrada de edición | Después de `Map(datos, existente)` |
+|---|---|---|
+| `Id = 7` | No incluye Id | `Id = 7` |
+| `Titulo = "Jazz"` | `Nombre = "Jazz en directo"` | `Titulo = "Jazz en directo"` |
+| `CosteLicencia = 25` | No incluye coste | `CosteLicencia = 25` |
+
+`existente` sigue siendo la **misma instancia**. En cambio, `_mapper.Map<Album>(datos)` crea otra entidad; no actualiza por sí solo la que EF Core ya está siguiendo.
+
+#### Ejemplo práctico: actualizar un álbum con SQL Server
+
+Este controlador concentra el ejemplo de actualización. En una aplicación por capas, la consulta, el mapeo y el guardado suelen coordinarse desde el servicio.
+
+```csharp
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+[ApiController]
+[Route("api/albums")]
+public class AlbumsController : ControllerBase
+{
+    private readonly CatalogoDbContext _db;
+    private readonly IMapper _mapper;
+
+    public AlbumsController(CatalogoDbContext db, IMapper mapper)
+    {
+        _db = db;
+        _mapper = mapper;
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<AlbumLecturaDto>> Actualizar(
+        int id, AlbumEdicionDto datos)
+    {
+        if (string.IsNullOrWhiteSpace(datos.Nombre))
+            return BadRequest("Indica el nombre del álbum.");
+
+        var existente = await _db.Albums.FirstOrDefaultAsync(album => album.Id == id);
+        if (existente is null)
+            return NotFound();
+
+        _mapper.Map(datos, existente);
+        await _db.SaveChangesAsync();
+
+        return Ok(_mapper.Map<AlbumLecturaDto>(existente));
+    }
+}
+```
+
+`PUT /api/albums/7` con `{"nombre":"Jazz en directo"}` modifica el título si existe ese álbum. La consulta mantiene el seguimiento de EF Core; después del mapeo, `SaveChangesAsync()` guarda el cambio. `Id` y `CosteLicencia` quedan fuera de la edición.
+
+#### Qué conviene recordar
+
+- **Mapear no guarda en la base de datos**, no valida la entrada ni comprueba permisos.
+- **No es un PATCH automático:** los valores vacíos o `null` de propiedades mapeadas pueden sobrescribir los existentes. Define qué campos admite cada operación.
+- `Map` trabaja con objetos ya disponibles en memoria. Mapear una entidad después de cargarla no reduce las columnas leídas; para proyectar desde EF Core usa `Select` o `ProjectTo`, con expresiones traducibles a SQL.
+- AutoMapper prepara y reutiliza planes de mapeo; su configuración y compilación tienen un coste inicial.
+- **Ventaja:** reduce asignaciones repetidas. **Coste:** añade configuración y errores que pueden aparecer al validar o ejecutar el mapa. Para pocos campos, el mapeo manual puede ser más claro.
+
+[Proyección con EF Core](https://docs.automapper.io/en/stable/Queryable-Extensions.html). Las reglas de negocio permanecen en el servicio o dominio; el perfil describe correspondencias de datos.
 
 ### Code First y Database First: por dónde empiezas
 

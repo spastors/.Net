@@ -1,0 +1,43 @@
+Use case: infographic-diagram
+Asset type: Spanish educational cheatsheet for a .NET README.
+Create a clean, polished, highly readable portrait infographic with white background, navy headings, teal and blue cards, amber callouts, flat icons, generous spacing and accurate monospace C# code. One image. No watermark, no irrelevant objects.
+Title "AutoMapper: de entidad a DTO"
+Subtitle "Configuras las correspondencias; Map aplica los valores"
+
+TOP SECTION title "1 · Crear un DTO nuevo"
+Two aligned cards with precise horizontal property arrows:
+left "Origen · Album" rows "Id = 7", "Titulo = Jazz", "CosteLicencia = 25".
+right "Destino · AlbumLecturaDto" rows "Id = 7", "Nombre = Jazz".
+Arrow Id→Id labeled "Mismo nombre".
+Arrow Titulo→Nombre labeled "Nombre distinto: MapFrom".
+CosteLicencia has NO arrow and a note "Solo está en la entidad; no sale en este DTO".
+Under cards exact C# "var dto = _mapper.Map<AlbumLecturaDto>(album);".
+Small caption "Crea un AlbumLecturaDto; conserva el Album original".
+
+MIDDLE SECTION title "2 · Configurar el mapa en un Profile"
+Render exact code with legible wrapping outside string literals:
+CreateMap<Album, AlbumLecturaDto>()
+    .ForMember(d => d.Nombre,
+        o => o.MapFrom(s => s.Titulo));
+Explain two short labels "CreateMap<Origen, Destino>: dirección del mapeo" and "ForMember: propiedad de destino · MapFrom: de dónde sale el valor".
+
+BOTTOM SECTION title "3 · Modificar un objeto existente"
+Three compact panels left to right:
+"DTO de edición · datos" with "Nombre = Jazz en directo"
+arrow to "Map sobre existente" with exact C# "_mapper.Map(datos, existente);"
+arrow to "La misma entidad · existente" rows "Id = 7", "Titulo = Jazz en directo", "CosteLicencia = 25".
+Badge "Misma instancia".
+Under these panels show exact update configuration:
+CreateMap<AlbumEdicionDto, Album>()
+    .ForMember(d => d.Titulo,
+        o => o.MapFrom(s => s.Nombre))
+    .ForMember(d => d.Id, o => o.Ignore())
+    .ForMember(d => d.CosteLicencia, o => o.Ignore());
+Caption "Ignore protege Id y CosteLicencia durante este mapeo".
+A small before/after strip "Antes: Titulo = Jazz → Después: Titulo = Jazz en directo" and "Id y coste se conservan".
+
+BOTTOM REFERENCE BAND two rows:
+"Map<Destino>(origen) → nuevo objeto"
+"Map(origen, existente) → modifica ese objeto"
+Final footnote "Map no guarda en SQL Server ni valida datos. Con EF Core: SaveChangesAsync guarda los cambios."
+Technical constraints: preserve direction source to destination, DTO has no CosteLicencia property, mapping updating existing uses explicit Ignore for Id and cost, no database arrow from AutoMapper, no claim generic deep clone. Large readable text.
