@@ -4,11 +4,9 @@ Aplicación de ejemplo para consultar buenas prácticas de ASP.NET Core. Gestion
 
 **«Librería» es el dominio del negocio: una tienda de libros.** Este proyecto es una Web API ejecutable; no un paquete NuGet.
 
-Derivada del ejercicio de un profesor. Consulta [origen y atribución](ORIGEN.md). El ejemplo recibido se conserva en `../../project-example/`.
-
 ## Empieza aquí
 
-[![Roadmap: desde una petición HTTP hasta SQL Server, con los archivos y el orden de lectura](../../docs/images/libreria-roadmap-inicio.png)](../../docs/images/libreria-roadmap-inicio.png)
+[![Roadmap: desde una petición HTTP hasta SQL Server, con los archivos y el orden de lectura](../docs/images/libreria-roadmap-inicio.png)](../docs/images/libreria-roadmap-inicio.png)
 
 ### Orden de lectura
 
