@@ -1,0 +1,115 @@
+@baseUrl = http://localhost:5210
+# Ejecuta cada bloque por separado. Sustituye los Id con los devueltos por los POST.
+@editorialId = 1
+@otraEditorialId = 2
+@libroId = 1
+@clienteId = 1
+
+### 1. Crear editorial: 201 + Location
+POST {{baseUrl}}/api/editoriales
+Content-Type: application/json
+
+{ "nombre": "Horizonte" }
+
+### 2. Crear otra editorial para practicar el cambio de relación
+POST {{baseUrl}}/api/editoriales
+Content-Type: application/json
+
+{ "nombre": "Papel y tinta" }
+
+### 3. Crear libro: copia antes el Id de editorial en la variable
+POST {{baseUrl}}/api/libros
+Content-Type: application/json
+
+{ "titulo": "Fantastic Mr. Fox", "isbn": "9780140328721", "precio": 12.50, "editorialId": {{editorialId}} }
+
+### 4. Búsqueda paginada
+GET {{baseUrl}}/api/libros?texto=Fantastic&pagina=1&tamano=25
+
+### 5. Consultar por Id
+GET {{baseUrl}}/api/libros/{{libroId}}
+
+### 6. Editar libro: el Id solo va en URL; cambia también la editorial
+PUT {{baseUrl}}/api/libros/{{libroId}}
+Content-Type: application/json
+
+{ "titulo": "Fantastic Mr. Fox", "isbn": "9780140328721", "precio": 14.00, "editorialId": {{otraEditorialId}} }
+
+### 7. Cambiar nombre de la editorial
+PUT {{baseUrl}}/api/editoriales/{{editorialId}}
+Content-Type: application/json
+
+{ "nombre": "Horizonte Ediciones" }
+
+### 8. Consultar editoriales
+GET {{baseUrl}}/api/editoriales
+
+### 9. Consultar una editorial
+GET {{baseUrl}}/api/editoriales/{{editorialId}}
+
+### 10. Alta de cliente
+POST {{baseUrl}}/api/clientes
+Content-Type: application/json
+
+{ "nombre": "Lucia Torres", "email": "lucia@example.com", "fechaNacimiento": "2000-06-15" }
+
+### 11. Buscar clientes
+GET {{baseUrl}}/api/clientes?nombre=Lucia
+
+### 12. Consultar cliente
+GET {{baseUrl}}/api/clientes/{{clienteId}}
+
+### 13. Cotizar: 30.00 de subtotal, 3.00 de descuento y 27.00 de total
+POST {{baseUrl}}/api/cotizaciones
+Content-Type: application/json
+
+{ "precioUnitario": 15.00, "unidades": 2, "descuentoPorcentaje": 10 }
+
+### 14. Consultar Open Library: requiere Internet; no guarda en BD
+GET {{baseUrl}}/api/catalogo-externo/9780140328721
+
+### 15. Validación: 400. No llega a consultar SQL
+POST {{baseUrl}}/api/libros
+Content-Type: application/json
+
+{ "titulo": "", "isbn": "123", "precio": 0, "editorialId": 0 }
+
+### 16. Repetir el POST del paso 3 tras crearlo: 409 por ISBN duplicado
+POST {{baseUrl}}/api/libros
+Content-Type: application/json
+
+{ "titulo": "Otro título", "isbn": "9780140328721", "precio": 10, "editorialId": {{editorialId}} }
+
+### 17. Id que no exista: 404
+GET {{baseUrl}}/api/libros/2147483647
+
+### 18. Borrar editorial con el libro del paso 6: 409
+DELETE {{baseUrl}}/api/editoriales/{{otraEditorialId}}
+
+### 19. Borrar libro: 204. Esta petición sí elimina el registro
+DELETE {{baseUrl}}/api/libros/{{libroId}}
+
+### 20. Borrar editorial cuando ya no tenga libros: 204
+DELETE {{baseUrl}}/api/editoriales/{{otraEditorialId}}
+
+### 21. DI: compara IDs dentro de la respuesta y entre dos llamadas
+GET {{baseUrl}}/api/ejemplos/di
+
+### 22. Servicios con clave
+GET {{baseUrl}}/api/ejemplos/di/nombre?nombre=Ana
+
+### 23. Espera que bloquea el hilo
+GET {{baseUrl}}/api/ejemplos/esperas/sincrona
+
+### 24. Espera asíncrona
+GET {{baseUrl}}/api/ejemplos/esperas/asincrona
+
+### 25. Dos esperas concurrentes
+GET {{baseUrl}}/api/ejemplos/esperas/concurrente
+
+### 26. Header y body: orígenes distintos, misma petición
+POST {{baseUrl}}/api/ejemplos/http
+Content-Type: application/json
+X-Canal: web
+
+{ "titulo": "Consulta desde la web" }

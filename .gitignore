@@ -1,1 +1,6 @@
-project
+# Archivos generados de todos los proyectos; las migraciones de Libreria se versionan.
+**/[Bb]in/
+**/[Oo]bj/
+**/.vs/
+*.user
+*.suo

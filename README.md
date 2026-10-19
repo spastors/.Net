@@ -1,5 +1,7 @@
 # 📘 Guía de Iniciación a .NET (Backend)
 
+> **Proyecto práctico:** [API de librería comentada](project-library-notes/README.md), con capas, validaciones y SQL Server. [Origen y atribución](project-library-notes/ORIGEN.md). [Mapa para empezar](project-library-notes/README.md#empieza-aquí).
+
 > **Resumen:** Notas técnicas sobre el ecosistema .NET, sintaxis moderna de C\# y patrones para desarrollo backend.
 > **Versión:** Referencia para .NET 10 LTS (soporte largo) y C\# 14. Información revisada el 13-10-2026.
 > **Ejemplos:** cada bloque es independiente. Las instrucciones de consola se colocan en `Program.cs`; los fragmentos de métodos, dentro de su clase. Los controladores requieren un proyecto ASP.NET Core.

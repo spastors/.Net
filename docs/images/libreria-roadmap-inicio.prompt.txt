@@ -1,0 +1,94 @@
+Use case: infographic-diagram.
+Crea UNA infografía educativa en español para el README de una Web API real llamada Librería. Su función es ser la puerta de entrada de alguien Junior que abre el proyecto desde cero: entender qué hace cada pieza, qué archivo abrir y cómo viaja una petición. No es una biblioteca NuGet, es una tienda de libros.
+
+Formato: póster vertical de alta resolución, aproximadamente 2048 x 3072. Diseño editorial limpio de documentación técnica: fondo marfil muy claro, tinta azul oscuro, tarjetas blancas, acentos azul para HTTP, violeta para aplicación, verde para datos. Tipografía sans serif grande, nombres C# en monoespaciada. Amplio espacio en blanco, jerarquía muy clara, flechas inequívocas y pequeños iconos funcionales (navegador, documento, engranajes, base de datos). Nada de personajes, dibujos decorativos, logos, marcas de agua ni estilo manuscrito. Texto legible y exacto. No añadir texto ajeno a esta especificación.
+
+Título: "TU PRIMER RECORRIDO POR LIBRERÍA"
+Subtítulo: "De una petición HTTP a un registro en SQL Server"
+
+BANDA 1: "LO BÁSICO"
+Tres pequeñas tarjetas: "C# · lenguaje del código"; ".NET · plataforma que ejecuta la aplicación"; "ASP.NET Core · framework para crear la API web".
+Debajo, una línea: "Cliente = quien llama a la API · Endpoint = método HTTP + ruta".
+Ejemplo: "POST /api/libros = crear un libro".
+
+BANDA 2: "ANTES DE LA PRIMERA PETICIÓN"
+Pequeño camino de cuatro hitos: "Lee README.md" → "Revisa appsettings.json" → "Aplica las migraciones" → "Arranca la API".
+Un recuadro importante separado del flujo de peticiones:
+"Program.cs: prepara y conecta la aplicación"
+"Lee configuración · registra dependencias · habilita controladores"
+Dos conexiones cortas ilustradas: "ILibroService → LibroService" y "ILibroRepository → LibroRepository".
+Nota breve: "La base de datos se crea al aplicar migraciones."
+
+BANDA 3, la parte principal, ocupa aproximadamente la mitad larga del póster:
+"SIGUE UNA PETICIÓN REAL"
+Dibujar un recorrido vertical de seis tarjetas numeradas conectadas con flechas descendentes. Cada tarjeta tiene un rol bien visible, el nombre real del archivo y una explicación concreta. El camino principal sigue exactamente CLIENTE → CONTROLADOR → SERVICIO → REPOSITORIO → EF CORE → SQL SERVER. Las validaciones y el mapeo son tareas del servicio, no flechas que nacen del controlador.
+
+Tarjeta 1, azul, "1 · CLIENTE"
+"Swagger, un frontend o Libreria.Api.http"
+"POST http://localhost:5210/api/libros"
+"Header: Content-Type: application/json"
+"Body: los datos del libro en JSON"
+Un pequeño código con estos datos válidos:
+{
+  "titulo": "Fantastic Mr. Fox",
+  "isbn": "9780140328721",
+  "precio": 12.50,
+  "editorialId": 1
+}
+Nota pequeña: "Crea antes una editorial y usa su Id."
+
+Tarjeta 2, azul, "2 · CONTROLADOR"
+"LibrosController.cs → Crear"
+"El enrutamiento elige esta acción."
+"[FromBody] convierte JSON → LibroCrearDto."
+"Delega el trabajo en ILibroService."
+
+Tarjeta 3, violeta, "3 · SERVICIO"
+"LibroService.cs → CrearAsync"
+Tres tareas internas numeradas o con flechas internas sencillas, sin confundirlas con las seis etapas:
+"Valida campos → LibroCrearValidator"
+"Comprueba editorial e ISBN → repositorios"
+"Copia DTO → entidad Libro → LibroMappings"
+Pequeña definición: "DTO: datos que viajan · Entidad: datos que se guardan".
+Una ramificación lateral de error discreta desde esta tarjeta:
+"Si falla: 400 o 409"
+"ApiExceptionHandler.cs prepara el error HTTP".
+No dibujar esa ramificación como camino obligatorio.
+
+Tarjeta 4, verde, "4 · REPOSITORIO"
+"LibroRepository.cs"
+"Agregar prepara el alta."
+"GuardarAsync llama a SaveChangesAsync."
+
+Tarjeta 5, verde, "5 · ENTITY FRAMEWORK CORE"
+"LibreriaDbContext.cs"
+"Relaciona clases con tablas."
+"SaveChangesAsync envía el INSERT a SQL Server."
+No mostrar Add como si ejecutara ya el INSERT.
+
+Tarjeta 6, verde, con icono de cilindro, "6 · SQL SERVER"
+"Base: LibreriaCurso · Tabla: Libros"
+"Guarda el libro y genera su Id."
+
+BANDA 4: "LA RESPUESTA VUELVE"
+Flechas de vuelta, claramente diferenciadas del recorrido de ida, en una línea de lectura sencilla:
+"SQL → EF → Repositorio → Servicio → Controlador → Cliente".
+Debajo: "El servicio devuelve LibroDto. El controlador devuelve HTTP."
+Tarjeta final: "201 Created + JSON del libro + cabecera Location"
+"Location indica la URL para consultar el libro creado."
+No afirmar que SQL devuelve JSON o DTO, ni que CreatedAtAction ejecuta el GET.
+
+BANDA 5 final, breve, "POR DÓNDE EMPEZAR A LEER"
+"1. README.md y Program.cs"
+"2. Libreria.Api.http y LibrosController.cs"
+"3. DTOs, Validators y LibroService.cs"
+"4. LibroRepository.cs y LibreriaDbContext.cs"
+"5. Models y Migrations"
+
+Exactitud: mostrar preparación inicial separada de cada petición; el servicio llama al validator; DI proporciona implementaciones; EF accede a SQL Server; respuesta HTTP nace en el controlador. No incluir repositorios genéricos ni AutoMapper, porque este proyecto utiliza mapeo manual. No incluir autenticación ni frontend implementado. Hacer muy fácil seguir el orden, sin flechas cruzadas, texto diminuto ni repetición de explicaciones.
+
+
+---
+EDICIÓN FINAL (image_gen, herramienta integrada)
+
+undefined
