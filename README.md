@@ -2980,6 +2980,54 @@ Si el sitio predeterminado de IIS está iniciado y escucha en el puerto 80, apar
 
 ---
 
-## Pasos finales
+## Verificar conocimientos
 
-Crear un cuestionario para junior de .net, c#, asp.net de 10 preguntas sobre estos apuntes...con 4 opciones y en la misma pregunta que se diga que se debería saber para responder bien la pregunta.
+Puedes verificar tus conocimientos en: https://roadmap.sh/aspnet-core
+
+Prompt:
+
+```md
+Actúa como formador de desarrollo backend con .NET, C# y ASP.NET Core.
+
+Objetivo:
+Crear un cuestionario que compruebe la comprensión de los apuntes proporcionados y la capacidad de aplicar sus conceptos en situaciones sencillas de nivel junior.
+
+Material:
+README.md
+
+Antes de crear el cuestionario:
+1. Lee los apuntes e identifica sus principales temas.
+2. Contrasta las afirmaciones que utilizarás en las preguntas con documentación oficial de Microsoft Learn y .NET.
+3. Comprueba a qué versiones se refiere la información. No mezcles .NET Framework, .NET moderno, ASP.NET clásico y ASP.NET Core.
+4. Si detectas errores, contradicciones o información desactualizada, explícalos brevemente y aporta enlaces a las fuentes oficiales antes del cuestionario.
+5. Basa las preguntas en los temas de los apuntes. No añadas contenidos externos como materia evaluable.
+6. Si no puedes acceder a los apuntes o verificar una afirmación, indícalo; no inventes información ni fuentes.
+
+Diseño del cuestionario:
+- Crea exactamente 10 preguntas en español.
+- Cada pregunta debe tener cuatro opciones: A, B, C y D.
+- Debe existir una única respuesta correcta y claramente defendible.
+- Utiliza distractores plausibles basados en errores habituales de principiantes.
+- Evita preguntas trampa, ambigüedades y opciones como «todas las anteriores».
+- Distribuye las preguntas entre los principales temas de los apuntes.
+- Incluye 4 preguntas de comprensión y 6 de aplicación, interpretación de código o resolución de situaciones sencillas.
+- Cuando incluyas código, proporciona el contexto necesario para responder sin asumir configuraciones ocultas.
+
+Formato de cada pregunta:
+Pregunta [número]
+Conocimiento necesario: indica brevemente qué concepto debe dominarse, sin revelar la respuesta.
+Enunciado: [...]
+A) [...]
+B) [...]
+C) [...]
+D) [...]
+
+No muestres las soluciones ni explicaciones todavía. Espera a que envíe mis respuestas.
+
+Cuando responda:
+- Corrige cada pregunta e indica mi respuesta y la correcta.
+- Explica el razonamiento y por qué las otras opciones no son válidas.
+- Relaciona la explicación con el apartado correspondiente de los apuntes y enlaza la documentación oficial que la respalda.
+- Calcula la puntuación sobre 10, sin penalizar los errores.
+- Identifica los conceptos que necesito repasar y propón un ejercicio breve para cada dificultad detectada.
+```
