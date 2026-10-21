@@ -1,0 +1,53 @@
+Use case: infographic-diagram.
+Genera UNA infografía educativa en español, clara y correcta, sobre STACK y HEAP en C#/.NET para principiantes. Es para los apuntes de un README. Formato horizontal 3:2, alta resolución, tipografía grande y nítida. Estilo editorial técnico amable: fondo blanco cálido, títulos azul oscuro, STACK en azul y HEAP en verde, tarjetas con bordes redondeados, diagramas sencillos, mucho espacio, flechas precisas. Nada de personajes, marcas de agua ni adornos inútiles. Texto breve, excelente legibilidad. No más contenido que el indicado.
+
+TÍTULO: "STACK Y HEAP: ¿DÓNDE VIVEN LOS DATOS?"
+Subtítulo: "Un modelo sencillo para entender la memoria en .NET"
+
+FRANJA SUPERIOR: DOS ANALOGÍAS
+"STACK · pila de llamadas"
+"Como una pila de bandejas: la última que entra es la primera que sale."
+"Guarda el contexto de los métodos activos. Cada hilo tiene su pila."
+
+"HEAP · memoria de objetos"
+"Como un almacén: los objetos permanecen mientras siguen siendo accesibles."
+"El GC (recolector de basura) puede recuperar los objetos que ya no se alcanzan."
+
+PANEL CENTRAL, a la izquierda código C# nítido, sin errores y con EXACTAMENTE estos nombres y cifras:
+int limite = 5;
+var pedido1 = new Pedido { Unidades = 2 };
+var pedido2 = pedido1;
+pedido2.Unidades = 3;
+
+Debajo una pequeña definición:
+class Pedido
+{
+    public int Unidades;
+}
+
+A la derecha del código, diagrama principal de dos columnas "STACK" y "HEAP", estado DESPUÉS de ejecutar las cuatro instrucciones.
+Dentro de STACK dibujar una única caja titulada "Método actual · modelo simplificado".
+Dentro tres filas:
+"limite = 5"
+"pedido1 = referencia"
+"pedido2 = referencia"
+
+Dentro de HEAP dibujar UN SOLO objeto, una caja titulada "Objeto Pedido", y dentro "Unidades = 3". El campo Unidades DEBE estar físicamente DENTRO del objeto que está en HEAP.
+Dibujar exactamente dos flechas claras HACIA ESE MISMO OBJETO, una desde la fila pedido1 y otra desde la fila pedido2. Las puntas deben estar en el objeto del HEAP. No dibujar dos pedidos. No dibujar flechas desde limite ni desde el código. No dibujar una flecha que copie el objeto.
+Rótulo debajo de esas flechas: "Se copia la referencia, no el objeto."
+Pequeña llamada sobre el campo: "Unidades es int y está dentro del objeto en el heap."
+
+FRANJA INFERIOR: dos tarjetas claras:
+"AL TERMINAR UN MÉTODO"
+"Se retira su contexto de la pila."
+"El objeto puede sobrevivir si otra parte del programa lo sigue referenciando."
+
+"CUANDO YA NO ES ACCESIBLE"
+"El objeto queda disponible para el GC."
+"Su memoria no se recupera necesariamente de inmediato."
+
+PIE, visible y legible, no letra minúscula:
+"Valor o referencia describe qué se copia, no obliga a usar stack o heap."
+"Esquema didáctico: el compilador puede usar registros y otras optimizaciones."
+
+Exactitud obligatoria: no afirmar que todos los int o struct están en stack; no afirmar que las referencias solo existen en stack; no afirmar que todos los objetos se borran al terminar el método; no representar GC como una papelera que borra al salir; no afirmar que heap es memoria de disco; no añadir números de direcciones reales o referencias inseguras. La imagen debe ayudar a leer el ejemplo de un vistazo.

@@ -391,13 +391,69 @@ public class Cuenta
 | ¿Qué guarda la variable? | El dato directamente | Una referencia al objeto |
 | Al asignar a otra variable | Copia el valor | Copia la referencia; ambas apuntan al mismo objeto |
 | Al modificar la copia | Cambiar un valor simple, como `int`, no modifica el original | Modificar el objeto compartido se ve desde ambas variables |
-| ¿Dónde viven? | Depende del contexto: dentro de otro objeto o en la pila de llamadas (memoria temporal de los métodos activos) | Normalmente, el objeto está en el heap (zona donde .NET guarda y administra objetos) |
+| ¿Dónde viven? | Depende del contexto: pila, registros o dentro de un objeto/array en el heap | El objeto suele estar en el heap; su referencia puede estar en la pila, registros u otro objeto |
 | Analogía de ubicación | Una hoja dentro de una carpeta o sobre el escritorio: depende del contenedor | Un documento en un archivador; la variable conserva cómo encontrarlo |
 | Ejemplos | `int`, `bool`, `decimal`, `struct` | `class`, arrays, `List<T>` |
 
 Copiar un `struct` copia sus campos: si alguno contiene una referencia, el objeto apuntado puede seguir compartido. Reasignar una variable de referencia para que apunte a otro objeto tampoco cambia la otra variable.
 
 Referencia: [Tipos de valor y copia de referencias](https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/value-types).
+
+### Stack y heap: cómo se organiza la memoria
+
+**Stack** y **heap** son zonas de memoria que utiliza la aplicación mientras se ejecuta.
+
+| | Stack: pila de llamadas | Heap: memoria de objetos |
+|---|---|---|
+| **Analogía** | Pila de bandejas: la última que colocas es la primera que retiras | Almacén: los objetos permanecen mientras siguen siendo accesibles |
+| **Para qué sirve** | Organiza las llamadas a métodos y su contexto de ejecución | Guarda objetos administrados por .NET |
+| **Qué contiene** | Información para volver al método anterior y parte de sus datos temporales | Objetos, como instancias de clases y arrays, con sus campos |
+| **Duración** | Al regresar de un método, se retira su contexto de la pila | Un objeto puede sobrevivir al método que lo creó |
+| **Gestión** | Cada hilo —una secuencia de ejecución— tiene su pila | El **GC**, recolector de basura, recupera objetos que ya no son accesibles |
+
+Cada llamada ocupa un bloque de la pila, llamado **marco de pila** (*stack frame*). Si `Main` llama a `Calcular`, este termina antes de continuar en `Main`: último en entrar, primero en salir (**LIFO**). Es un modelo simplificado; el compilador puede optimizar las llamadas.
+
+[![Diagrama de stack y heap: dos referencias apuntan al mismo objeto Pedido](docs/images/stack-heap-memoria-dotnet.png)](docs/images/stack-heap-memoria-dotnet.png)
+
+#### Ejemplo: dos variables, un solo pedido
+
+```csharp
+int limite = 5;
+var pedido1 = new Pedido { Unidades = 2 };
+var pedido2 = pedido1; // Copia la referencia; no crea otro Pedido.
+
+pedido2.Unidades = 3;
+
+Console.WriteLine(limite);           // 5
+Console.WriteLine(pedido1.Unidades); // 3: ambas variables apuntan al mismo objeto.
+
+public class Pedido
+{
+    public int Unidades;
+}
+```
+
+- `pedido1` y `pedido2` permiten acceder al **mismo objeto**; cambiar sus unidades se ve desde ambas.
+- En el dibujo, las referencias locales aparecen en la pila y el objeto en el heap.
+- `Unidades` es un `int`, pero forma parte del objeto en el heap.
+- La ubicación real puede variar: el **JIT**, compilador durante la ejecución, puede usar registros del procesador o evitar ciertas reservas de memoria. El dibujo explica el comportamiento, no garantiza una distribución física exacta.
+
+#### ¿Cuándo se libera la memoria?
+
+1. Un método termina: su marco de pila se retira y ese espacio puede reutilizarse.
+2. Si devuelve un objeto, otra parte del programa puede conservar su referencia; el objeto sigue accesible.
+3. Cuando ningún camino desde las referencias activas del programa permite llegar al objeto, el GC puede recuperar su memoria en una recolección posterior.
+
+**GC no significa borrado inmediato.** Asignar `null` a una variable tampoco destruye el objeto: puede haber otras referencias y la recolección ocurre cuando el GC lo decide. [Gestión de memoria y GC](https://learn.microsoft.com/dotnet/standard/garbage-collection/fundamentals).
+
+#### Qué recordar para una entrevista
+
+- **Valor/referencia:** explica qué se copia al asignar. **Stack/heap:** explica dónde se organiza la memoria.
+- **Un `int` o `struct` no vive siempre en el stack:** puede formar parte de un objeto o de un array en el heap. El *boxing* también puede envolver un valor en un objeto; por ejemplo, `object dato = 5;`.
+- **Rendimiento:** retirar un marco de pila es sencillo; crear muchos objetos puede aumentar el trabajo del GC. Reservar en el heap también puede ser muy rápido.
+- **Errores:** demasiadas llamadas anidadas pueden agotar la pila (`StackOverflowException`); conservar objetos innecesarios mantiene memoria del heap ocupada.
+
+Referencias: [Tipos de valor](https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/value-types), [boxing](https://learn.microsoft.com/dotnet/csharp/programming-guide/types/boxing-and-unboxing) y [optimizaciones de memoria en .NET 10](https://devblogs.microsoft.com/dotnet/performance-improvements-in-net-10/).
 
 ## 4\. 🧬 Programación Orientada a Objetos (POO)
 
@@ -2770,9 +2826,15 @@ Console.WriteLine(await db.Database.CanConnectAsync());
 
 Esto comprueba la conexión. Puedes consultar los `DbSet` generados igual que en el ejemplo anterior.
 
-### Qué significa el registro `AddHttpClient` de la imagen
+### Cliente HTTP tipado: qué es y cómo se registra
 
-La imagen registra `IPostsService` y `PostsService` como un **cliente HTTP tipado**: un servicio que recibe un `HttpClient` preparado para consultar una API concreta.
+Un **cliente HTTP tipado** es una **clase C# que agrupa las llamadas a una API externa**. Recibe un `HttpClient` configurado y ofrece métodos como `ObtenerAsync(id)`.
+
+**¿Por qué «tipado»?** Lo utilizas mediante una clase o interfaz concreta, como `CatalogoRemoto` o `ICatalogoRemoto`. El compilador conoce sus métodos y detecta llamadas incorrectas.
+
+**En el ejemplo siguiente:** el controlador llama a `ICatalogoRemoto.ObtenerAsync(1)`; `CatalogoRemoto` envía la petición con `HttpClient` y devuelve un DTO.
+
+La imagen anterior utiliza otros nombres: `AddHttpClient<IPostsService, PostsService>` conecta la interfaz `IPostsService` con su implementación y le entrega el `HttpClient` configurado.
 
 | Parte de la imagen | Significado |
 |---|---|
@@ -2834,6 +2896,17 @@ public class CatalogoRemoto : ICatalogoRemoto
 ```
 
 `GetFromJsonAsync` envía un **GET**, espera la respuesta y convierte el JSON en el DTO. El servicio reutiliza la configuración recibida por DI; no crea un `HttpClient` manualmente en cada método.
+
+**Registro sencillo en `Program.cs`:** antes de `builder.Build()`.
+
+```csharp
+builder.Services.AddHttpClient<ICatalogoRemoto, CatalogoRemoto>(client =>
+{
+    client.BaseAddress = new Uri("https://jsonplaceholder.typicode.com/");
+});
+```
+
+Al solicitar `ICatalogoRemoto`, DI crea `CatalogoRemoto` y le entrega ese `HttpClient`. Llamar a `ObtenerAsync(1)` consulta `https://jsonplaceholder.typicode.com/albums/1`. La configuración con `appsettings.json` del apartado siguiente sustituye este registro. [Clientes tipados y registro mediante DI](https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory#typed-clients).
 
 ### ¿Es mejor usar `appsettings.json` para la URL?
 
